@@ -296,7 +296,7 @@ function renderJogosTable(b) {
   });
 
   if (filtered.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="muted" style="text-align:center;padding:18px">Nenhum jogo encontrado.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="muted" style="text-align:center;padding:18px">Nenhum jogo encontrado.</td></tr>';
     return;
   }
 
@@ -331,10 +331,8 @@ function renderJogosTable(b) {
           <td>${idx + 1}</td>
           <td><b>${a.participante_nome}</b></td>
           <td>${ballsHtml(a.dezenas, hitsSet)}</td>
-          <td>${a.dezenas.reduce((x, y) => x + y, 0)}</td>
-          <td>${a.dezenas.filter((n) => n % 2 === 0).length}P / ${a.dezenas.filter((n) => n % 2 !== 0).length}I</td>
           <td style="text-align:center">${acertosTxt}</td>
-          <td>
+          <td style="text-align:center">
             <button class="btn-icon" onclick="excluirAposta(${a.id})" title="Excluir Jogo">✕</button>
           </td>
         </tr>

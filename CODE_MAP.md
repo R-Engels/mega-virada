@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.06 (Serverless) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.07 (Serverless) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -9,9 +9,9 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 
 ```text
 04 - Mega da Virada Potenza/
-├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.06)
-├── styles.css                   # Estilos responsivos (Cartão, 4 Quadrantes, Heatmap, Conferência)
-├── app.js                       # Controlador principal e eventos da interface (V. 2.06)
+├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.07)
+├── styles.css                   # Estilos responsivos (Header Fixo, 4 Quadrantes, Heatmap, Conferência)
+├── app.js                       # Controlador principal e eventos da interface (V. 2.07)
 ├── stats_engine.js              # Motor matemático e sorteador com regra recomendada em JS
 ├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG
 ├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage
@@ -27,10 +27,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_D/             # Backup imutável V. 2.04
 ├── Backup_Versao_E/             # Backup imutável V. 2.05
 ├── Backup_Versao_F/             # Backup imutável V. 2.06
+├── Backup_Versao_G/             # Backup imutável V. 2.07
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.06)
+## Fluxos de Operação (V. 2.07)
+
+1. **Menu Superior Fixo (Sticky Header)**:
+   - Barra de navegação e botões superiores (`.topbar`) fixos no topo da janela com `position: sticky; top: 0; z-index: 1000`, `backdrop-filter: blur(8px)` e sombra suave, permanecendo acessíveis durante toda a rolagem da página.
+2. **Tabela de Jogos Registrados Limpa e Simplificada**:
+   - As colunas técnicas "Soma" e "Pares" foram removidas da tabela de jogos registrados (`#jogos-tbody`), concentrando a visualização no que é essencial: `#`, `Participante`, `Dezenas Marcadas`, `Acertos` (com destaque de premiação) e `Ação`.
 
 1. **Conferência Visual Direta no Registro do Bolão**:
    - Barra de conferência integrada diretamente na seção de jogos registrados (`#sec-jogos`), sem dependência de modal popup.
