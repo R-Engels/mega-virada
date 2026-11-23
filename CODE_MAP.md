@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.05 (Serverless) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.06 (Serverless) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -9,9 +9,9 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 
 ```text
 04 - Mega da Virada Potenza/
-├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.05)
+├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.06)
 ├── styles.css                   # Estilos responsivos (Cartão, 4 Quadrantes, Heatmap, Conferência)
-├── app.js                       # Controlador principal e eventos da interface (V. 2.05)
+├── app.js                       # Controlador principal e eventos da interface (V. 2.06)
 ├── stats_engine.js              # Motor matemático e sorteador com regra recomendada em JS
 ├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG
 ├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage
@@ -19,16 +19,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── concursos.json           # Base histórica compactada dos 3.087 concursos
 │   └── initial_state.json       # Estado inicial do Bolão Potenza e catálogo de nomes
 ├── CODE_MAP.md                  # Este mapa arquitetural
+├── README.md                    # Documentação do repositório e link GitHub Pages
 ├── iniciar_sistema.bat          # Inicializador local para navegador Windows
 ├── Backup_Versao_A/             # Backup imutável V. 1.20
 ├── Backup_Versao_B/             # Backup imutável V. 1.21
 ├── Backup_Versao_C/             # Backup imutável V. 2.03
 ├── Backup_Versao_D/             # Backup imutável V. 2.04
 ├── Backup_Versao_E/             # Backup imutável V. 2.05
+├── Backup_Versao_F/             # Backup imutável V. 2.06
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.05)
+## Fluxos de Operação (V. 2.06)
 
 1. **Conferência Visual Direta no Registro do Bolão**:
    - Barra de conferência integrada diretamente na seção de jogos registrados (`#sec-jogos`), sem dependência de modal popup.
