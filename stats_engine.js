@@ -422,21 +422,21 @@ const StatsEngine = (() => {
 
   // Escala de cores do Excel (Verde -> Amarelo -> Vermelho)
   function getExcelHeatmapColor(value, min, max) {
-    if (max <= min) return 'rgb(34, 197, 94)'; // verde
+    if (max <= min) return 'rgb(99, 190, 123)'; // verde suave padrão Excel
     const t = Math.max(0, Math.min(1, (value - min) / (max - min)));
     let r, g, b;
     if (t < 0.5) {
-      // De Verde (34, 197, 94) para Amarelo (234, 179, 8)
+      // De Verde (#63be7b) para Amarelo (#ffeb84)
       const factor = t * 2;
-      r = Math.round(34 + (234 - 34) * factor);
-      g = Math.round(197 + (179 - 197) * factor);
-      b = Math.round(94 + (8 - 94) * factor);
+      r = Math.round(99 + (255 - 99) * factor);
+      g = Math.round(190 + (235 - 190) * factor);
+      b = Math.round(123 + (132 - 123) * factor);
     } else {
-      // De Amarelo (234, 179, 8) para Vermelho (220, 38, 38)
+      // De Amarelo (#ffeb84) para Vermelho (#f8696b)
       const factor = (t - 0.5) * 2;
-      r = Math.round(234 + (220 - 234) * factor);
-      g = Math.round(179 + (38 - 179) * factor);
-      b = Math.round(8 + (38 - 8) * factor);
+      r = Math.round(255 + (248 - 255) * factor);
+      g = Math.round(235 + (105 - 235) * factor);
+      b = Math.round(132 + (107 - 132) * factor);
     }
     return `rgb(${r}, ${g}, ${b})`;
   }

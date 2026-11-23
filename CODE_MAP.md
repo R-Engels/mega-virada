@@ -1,4 +1,4 @@
-﻿<!-- Versão: V. 2.00 (Serverless) | Atualizado em: 2026-11-19 -->
+﻿<!-- Versão: V. 2.01 (Serverless) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)

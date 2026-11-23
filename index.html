@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.00</title>
-  <link rel="stylesheet" href="styles.css?v=2.00" />
+  <title>Mega-Sena Potenza — V. 2.01</title>
+  <link rel="stylesheet" href="styles.css?v=2.01" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
@@ -12,7 +12,7 @@
     <div class="brand">
       <span class="logo-dot">MS</span>
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.00 (Serverless)</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.01 (Serverless)</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -164,9 +164,16 @@
     <section id="sec-stats" class="card">
       <div class="card-header">
         <h3>Mapa de Calor &amp; Distribuição das 60 Dezenas no Bolão</h3>
-        <span class="badge">Densidade Estilo Excel: Verde (0) → Amarelo → Vermelho (Max)</span>
+        <span class="badge">Modelo Volante Caixa Oficial (10 × 6) · Escala Excel</span>
       </div>
-      <div id="bolao-heatmap" class="heatmap-grid" style="margin-top:14px"></div>
+
+      <div class="heatmap-legend" style="margin-top:14px">
+        <span>Frequência Mínima (0x)</span>
+        <div class="heatmap-bar"></div>
+        <span id="heatmap-max-legend">Frequência Máxima</span>
+      </div>
+
+      <div id="bolao-heatmap" class="heatmap-grid"></div>
 
       <div class="grid-2" style="margin-top:20px">
         <div>
@@ -302,10 +309,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.00 -->
-  <script src="stats_engine.js?v=2.00"></script>
-  <script src="printer_service.js?v=2.00"></script>
-  <script src="firebase_sync.js?v=2.00"></script>
-  <script src="app.js?v=2.00"></script>
+  <!-- Módulos da Aplicação V. 2.01 -->
+  <script src="stats_engine.js?v=2.01"></script>
+  <script src="printer_service.js?v=2.01"></script>
+  <script src="firebase_sync.js?v=2.01"></script>
+  <script src="app.js?v=2.01"></script>
 </body>
 </html>

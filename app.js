@@ -343,12 +343,15 @@ function renderHeatmap(b) {
   const minF = Math.min(...freqs);
   const maxF = Math.max(...freqs);
 
+  const legendMax = $('#heatmap-max-legend');
+  if (legendMax) legendMax.textContent = `Frequência Máxima (${maxF}x)`;
+
   let html = '';
   for (let n = 1; n <= 60; n++) {
     const f = numFreq[n];
     const color = StatsEngine.getExcelHeatmapColor(f, minF, maxF);
     html += `
-      <div class="heatmap-cell" style="background:${color};color:#000;font-weight:700">
+      <div class="heatmap-cell" style="background:${color}" title="Dezena ${String(n).padStart(2, '0')}: saiu ${f} vezes neste bolão">
         <span class="cell-num">${String(n).padStart(2, '0')}</span>
         <span class="cell-freq">${f}x</span>
       </div>
