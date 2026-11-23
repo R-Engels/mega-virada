@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.04 (Serverless) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.05 (Serverless) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -9,9 +9,9 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 
 ```text
 04 - Mega da Virada Potenza/
-├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.04)
-├── styles.css                   # Estilos responsivos (Cartão, 4 Quadrantes, Heatmap, Impressão)
-├── app.js                       # Controlador principal e eventos da interface (V. 2.04)
+├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.05)
+├── styles.css                   # Estilos responsivos (Cartão, 4 Quadrantes, Heatmap, Conferência)
+├── app.js                       # Controlador principal e eventos da interface (V. 2.05)
 ├── stats_engine.js              # Motor matemático e sorteador com regra recomendada em JS
 ├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG
 ├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage
@@ -24,22 +24,30 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_B/             # Backup imutável V. 1.21
 ├── Backup_Versao_C/             # Backup imutável V. 2.03
 ├── Backup_Versao_D/             # Backup imutável V. 2.04
+├── Backup_Versao_E/             # Backup imutável V. 2.05
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.04)
+## Fluxos de Operação (V. 2.05)
 
-1. **Ênfase Visual em Jogos/Meta Incompleto**:
+1. **Conferência Visual Direta no Registro do Bolão**:
+   - Barra de conferência integrada diretamente na seção de jogos registrados (`#sec-jogos`), sem dependência de modal popup.
+   - Botão de conferência instantânea contra o último concurso oficial Caixa baixado (`⚡ Conferir Último Concurso Oficial Caixa`) e input para qualquer sorteio de 6 dezenas.
+   - Painel scoreboard com exibição das dezenas sorteadas e contagem destacada de Senas, Quinas e Quadras.
+   - Dezenas acertadas em cada jogo brilham em amarelo-ouro neon (`.ball.hit`), enquanto dezenas não sorteadas são atenuadas (`.ball.dim`).
+   - Badges visuais de premiação (`🎉 SENA!`, `🥈 QUINA!`, `🥉 QUADRA!`, `🎯 X acertos`) e realce de linhas premiadas na tabela.
+   - Marcação das dezenas sorteadas diretamente no cartão/picker com estrela e contorno dourado (`.ball-pick.draw-num`).
+2. **Ênfase Visual em Jogos/Meta Incompleto**:
    - Se o participante possui menos jogos cadastrados do que a meta da sua cota (ex: $0/4$, $1/4$, $2/4$ ou $3/4$), a coluna "Jogos / Meta" exibe badge vermelho pulsante de alerta `⚠️ X / Y (Faltam Z)`.
    - Quando a cota é totalmente preenchida, o indicador muda para verde com ícone `✅ X / Y`.
-2. **Completar Aposta Staged no Cartão**:
+3. **Completar Aposta Staged no Cartão**:
    - Quando o operador seleciona de 1 a 5 dezenas no volante e clica em `Completar no Cartão (+X dezenas)`, o sistema preenche as dezenas restantes diretamente no cartão/picker para decisão visual do usuário. A aposta **NÃO** vai para o bolão automaticamente.
    - O usuário revisa as dezenas e clica em `Salvar Aposta` para efetivar no bolão, ou desmarca/ajusta se preferir.
-3. **Sortear Jogos Direto pro Bolão**:
+4. **Sortear Jogos Direto pro Bolão**:
    - `Sortear 1 Jogo Direto pro Bolão` (0 dezenas marcadas) ou `Sortear X Jogos da Cota`: gera as apostas pela Regra Recomendada e salva diretamente no bolão e Firebase sem etapa intermediária.
-4. **Lista de Participantes Invertida**:
+5. **Lista de Participantes Invertida**:
    - Os participantes mais recentes ou recém-adicionados são exibidos no topo da tabela (`reverse()`).
-5. **Mapa de Calor em 4 Quadrantes Oficiais**:
+6. **Mapa de Calor em 4 Quadrantes Oficiais**:
    - O mapa de calor de 60 dezenas é estruturado exatamente no layout do volante oficial Caixa: dividido nos 4 quadrantes (Q1, Q2, Q3, Q4) em blocos 5x3 com proporção visual de cédula e gradiente Excel tricolor.
 
 ## Módulos e Assinaturas (JavaScript Puro)

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.04</title>
-  <link rel="stylesheet" href="styles.css?v=2.04" />
+  <title>Mega-Sena Potenza — V. 2.05</title>
+  <link rel="stylesheet" href="styles.css?v=2.05" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
@@ -12,7 +12,7 @@
     <div class="brand">
       <span class="logo-dot">MS</span>
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.04 (Serverless)</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.05 (Serverless)</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -135,14 +135,51 @@
     <!-- 3. JOGOS DO BOLÃO & CONFERÊNCIA -->
     <section id="sec-jogos" class="card">
       <div class="card-header">
-        <h3>Jogos Registrados no Bolão</h3>
+        <h3>Jogos Registrados &amp; Conferência do Bolão</h3>
         <div class="inline-form">
           <input type="text" id="filtro-jogos" placeholder="Filtrar por nome ou dezena..." />
-          <button id="btn-conferir-modal" class="btn btn-ghost">🔍 Conferir Resultado</button>
           <button id="btn-export-txt" class="btn btn-ghost">Exportar Jogos TXT</button>
         </div>
       </div>
-      <div class="table-wrap max-520">
+
+      <!-- Barra Integrada de Conferência Visual no Próprio Registro -->
+      <div class="conferencia-panel" style="margin-top:14px;padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid var(--border);border-radius:10px">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:16px">🎯</span>
+            <strong style="font-size:13px">Conferência Visual Direta no Registro de Jogos</strong>
+            <span id="conf-status-tag" class="badge">Nenhum concurso ativo</span>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <button id="btn-quick-conf-ultimo" class="btn btn-primary" style="font-size:12px;padding:6px 12px">
+              ⚡ Conferir Último Concurso Oficial Caixa
+            </button>
+            <button id="btn-clear-conf" class="btn btn-ghost" style="font-size:12px;padding:6px 10px;display:none">
+              ✕ Limpar Conferência
+            </button>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+          <input type="text" id="conf-dezenas-inline" placeholder="Ou digite 6 dezenas sorteadas: 06 10 23 25 48 50" style="flex:1;min-width:240px" />
+          <button id="btn-exec-conf-inline" class="btn btn-outline" style="border-color:var(--accent);color:var(--accent);font-weight:700">
+            Conferir Dezenas
+          </button>
+        </div>
+
+        <!-- Scoreboard e Placar de Dezenas Sorteadas -->
+        <div id="conf-visual-board" style="display:none;margin-top:12px;padding:12px;background:rgba(6,78,59,0.35);border:1px solid #059669;border-radius:8px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:12px;font-weight:700;color:#a7f3d0">🎯 Dezenas Sorteadas:</span>
+              <div id="conf-drawn-balls-display"></div>
+            </div>
+            <div id="conf-awards-pills" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-wrap max-520" style="margin-top:14px">
         <table>
           <thead>
             <tr>
@@ -309,10 +346,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.04 -->
-  <script src="stats_engine.js?v=2.04"></script>
-  <script src="printer_service.js?v=2.04"></script>
-  <script src="firebase_sync.js?v=2.04"></script>
-  <script src="app.js?v=2.04"></script>
+  <!-- Módulos da Aplicação V. 2.05 -->
+  <script src="stats_engine.js?v=2.05"></script>
+  <script src="printer_service.js?v=2.05"></script>
+  <script src="firebase_sync.js?v=2.05"></script>
+  <script src="app.js?v=2.05"></script>
 </body>
 </html>

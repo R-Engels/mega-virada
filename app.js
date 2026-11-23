@@ -31,7 +31,7 @@ function toast(msg, isError = false) {
 function ballsHtml(nums, hitsSet = null) {
   return `<span class="balls">${nums
     .map((n) => {
-      const cls = hitsSet && hitsSet.has(n) ? 'ball hit' : 'ball';
+      const cls = hitsSet ? (hitsSet.has(n) ? 'ball hit' : 'ball dim') : 'ball';
       return `<span class="${cls}">${String(n).padStart(2, '0')}</span>`;
     })
     .join('')}</span>`;
@@ -306,16 +306,34 @@ function renderJogosTable(b) {
     .map((a, idx) => {
       const conf = confMap ? confMap.get(a.id) : null;
       const hitsSet = conf ? new Set(conf.acertos) : null;
-      const acertosTxt = conf ? `<b>${conf.qtd_acertos}</b> ${conf.faixa ? '<span class="badge">' + conf.faixa + '</span>' : ''}` : '-';
+
+      let acertosTxt = '-';
+      let rowCls = '';
+      if (conf) {
+        if (conf.faixa === 'SENA') {
+          acertosTxt = '<span class="badge-premio sena">🎉 SENA! (6 Acertos)</span>';
+          rowCls = 'tr-award-sena';
+        } else if (conf.faixa === 'QUINA') {
+          acertosTxt = '<span class="badge-premio quina">🥈 QUINA! (5 Acertos)</span>';
+          rowCls = 'tr-award-quina';
+        } else if (conf.faixa === 'QUADRA') {
+          acertosTxt = '<span class="badge-premio quadra">🥉 QUADRA! (4 Acertos)</span>';
+          rowCls = 'tr-award-quadra';
+        } else if (conf.qtd_acertos > 0) {
+          acertosTxt = `<span class="badge-acertos">🎯 ${conf.qtd_acertos} acerto${conf.qtd_acertos > 1 ? 's' : ''}</span>`;
+        } else {
+          acertosTxt = '<span class="muted" style="font-size:11px">0 acertos</span>';
+        }
+      }
 
       return `
-        <tr>
+        <tr class="${rowCls}">
           <td>${idx + 1}</td>
           <td><b>${a.participante_nome}</b></td>
           <td>${ballsHtml(a.dezenas, hitsSet)}</td>
           <td>${a.dezenas.reduce((x, y) => x + y, 0)}</td>
           <td>${a.dezenas.filter((n) => n % 2 === 0).length}P / ${a.dezenas.filter((n) => n % 2 !== 0).length}I</td>
-          <td>${acertosTxt}</td>
+          <td style="text-align:center">${acertosTxt}</td>
           <td>
             <button class="btn-icon" onclick="excluirAposta(${a.id})" title="Excluir Jogo">✕</button>
           </td>
@@ -505,9 +523,12 @@ function initPicker() {
 }
 
 function updatePickerUi() {
+  const drawnSet = state.confResultado ? new Set(state.confResultado.dezenas_sorteadas) : null;
+
   $$('.ball-pick').forEach((btn) => {
     const n = parseInt(btn.dataset.num, 10);
     btn.classList.toggle('selected', state.bolaoPickerSelected.has(n));
+    btn.classList.toggle('draw-num', !!(drawnSet && drawnSet.has(n)));
   });
 
   const qCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
@@ -838,7 +859,84 @@ function printSlips() {
   window.print();
 }
 
-// ===== CONFERÊNCIA DE RESULTADOS =====
+// ===== CONFERÊNCIA DE RESULTADOS (DIRETO NO REGISTRO) =====
+
+function executarConferenciaVisual(nums, label = null) {
+  const b = getCurrentBolao();
+  if (!b) return;
+
+  if (!nums || nums.length !== 6) {
+    toast('Informe exatamente 6 dezenas para conferir.', true);
+    return;
+  }
+
+  nums = nums.slice().sort((a, b) => a - b);
+  const res = StatsEngine.conferirApostas(b.apostas || [], nums);
+  state.confResultado = res;
+
+  // Atualiza painel visual inline
+  const board = $('#conf-visual-board');
+  const ballsDisp = $('#conf-drawn-balls-display');
+  const pillsDisp = $('#conf-awards-pills');
+  const tagDisp = $('#conf-status-tag');
+  const btnClear = $('#btn-clear-conf');
+  const inputInline = $('#conf-dezenas-inline');
+
+  if (inputInline) {
+    inputInline.value = nums.map((n) => String(n).padStart(2, '0')).join(' ');
+  }
+
+  if (ballsDisp) {
+    ballsDisp.innerHTML = ballsHtml(res.dezenas_sorteadas);
+  }
+
+  if (pillsDisp) {
+    const totalHits = res.detalhes.reduce((acc, d) => acc + d.qtd_acertos, 0);
+    pillsDisp.innerHTML = `
+      <span class="badge-premio ${res.senas > 0 ? 'sena' : ''}" style="${res.senas === 0 ? 'opacity:0.4' : ''}">💰 ${res.senas} Sena${res.senas !== 1 ? 's' : ''}</span>
+      <span class="badge-premio ${res.quinas > 0 ? 'quina' : ''}" style="${res.quinas === 0 ? 'opacity:0.4' : ''}">🥈 ${res.quinas} Quina${res.quinas !== 1 ? 's' : ''}</span>
+      <span class="badge-premio ${res.quadras > 0 ? 'quadra' : ''}" style="${res.quadras === 0 ? 'opacity:0.4' : ''}">🥉 ${res.quadras} Quadra${res.quadras !== 1 ? 's' : ''}</span>
+      <span class="badge" style="font-weight:700">${totalHits} Acertos no Total</span>
+    `;
+  }
+
+  if (tagDisp) {
+    tagDisp.textContent = label ? `✅ Concurso #${label} Conferido` : '✅ Conferência Ativa';
+    tagDisp.className = 'badge badge-cloud-active';
+  }
+
+  if (board) board.style.display = 'block';
+  if (btnClear) btnClear.style.display = 'inline-flex';
+
+  renderJogosTable(b);
+  updatePickerUi();
+
+  const msg = res.senas > 0 || res.quinas > 0 || res.quadras > 0
+    ? `🎉 Bolão Premiado! ${res.senas} Sena(s), ${res.quinas} Quina(s) e ${res.quadras} Quadra(s)!`
+    : `Conferência realizada: nenhum prêmio de 4, 5 ou 6 acertos neste sorteio.`;
+  toast(msg);
+}
+
+function limparConferenciaVisual() {
+  state.confResultado = null;
+  const board = $('#conf-visual-board');
+  const btnClear = $('#btn-clear-conf');
+  const tagDisp = $('#conf-status-tag');
+  const inputInline = $('#conf-dezenas-inline');
+
+  if (board) board.style.display = 'none';
+  if (btnClear) btnClear.style.display = 'none';
+  if (inputInline) inputInline.value = '';
+  if (tagDisp) {
+    tagDisp.textContent = 'Nenhum concurso ativo';
+    tagDisp.className = 'badge';
+  }
+
+  const b = getCurrentBolao();
+  if (b) renderJogosTable(b);
+  updatePickerUi();
+  toast('Conferência do bolão resetada.');
+}
 
 function abrirModalConferencia() {
   const modal = $('#conferir-modal');
@@ -940,6 +1038,7 @@ async function atualizarResultadoCaixa() {
       }
 
       $('#sync-banner').textContent = `Concurso Mais Recente: #${concNum} (${data.dataApuracao || ''}) · Dezenas: ${dezenas.join(', ')}`;
+      executarConferenciaVisual(dezenas, concNum);
     }
   } catch (err) {
     console.warn('Erro ao consultar espelho Caixa:', err);
@@ -1097,7 +1196,29 @@ function bindEvents() {
   $('#print-teimosinha')?.addEventListener('change', buildSlipsPreview);
   $('#btn-print-bolao-list')?.addEventListener('click', () => window.print());
 
-  // Conferência
+  // Conferência Visual Direta no Registro
+  $('#btn-quick-conf-ultimo')?.addEventListener('click', () => {
+    if (state.concursos && state.concursos.length) {
+      const ultimo = state.concursos[state.concursos.length - 1];
+      executarConferenciaVisual(ultimo.dezenas, ultimo.concurso);
+    } else {
+      toast('Nenhum concurso histórico carregado.', true);
+    }
+  });
+
+  $('#btn-exec-conf-inline')?.addEventListener('click', () => {
+    const txt = ($('#conf-dezenas-inline')?.value || '').trim();
+    const nums = txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60);
+    if (nums.length !== 6) {
+      toast('Informe exatamente 6 dezenas para conferir.', true);
+      return;
+    }
+    executarConferenciaVisual(nums, 'Manual');
+  });
+
+  $('#btn-clear-conf')?.addEventListener('click', limparConferenciaVisual);
+
+  // Conferência Modal (Legado)
   $('#btn-conferir-modal')?.addEventListener('click', abrirModalConferencia);
   $('#btn-close-conferir-modal')?.addEventListener('click', () => {
     $('#conferir-modal').style.display = 'none';
