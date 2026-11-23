@@ -1,0 +1,311 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mega-Sena Potenza — V. 2.00</title>
+  <link rel="stylesheet" href="styles.css?v=2.00" />
+  <style id="dynamic-page-style"></style>
+</head>
+<body>
+  <header class="topbar no-print">
+    <div class="brand">
+      <span class="logo-dot">MS</span>
+      <div>
+        <h1>Mega-Sena Potenza <small>V. 2.00 (Serverless)</small></h1>
+        <p id="sync-banner">Carregando dados da Mega-Sena...</p>
+      </div>
+    </div>
+    <nav class="tabs">
+      <a class="tab active" href="#sec-bolao">Bolão &amp; Cadastro</a>
+      <a class="tab" href="#sec-jogos">Jogos &amp; Conferência</a>
+      <a class="tab" href="#sec-stats">Estatística do Bolão</a>
+      <a class="tab" href="#sec-impressao">Impressão Lotérica (Óptica)</a>
+    </nav>
+    <div class="actions">
+      <span id="cloud-status-pill" class="badge badge-cloud-local">💾 Modo Local</span>
+      <button id="btn-cloud-modal" class="btn btn-outline" style="border-color:#38bdf8;color:#38bdf8">☁️ Sincronização Nuvem (Firebase)</button>
+      <button id="btn-sync" class="btn btn-primary">Atualizar Resultado Caixa</button>
+    </div>
+  </header>
+
+  <main class="container no-print">
+    <!-- 1. CABEÇALHO E REGRAS DO BOLÃO -->
+    <section id="sec-bolao" class="card">
+      <div class="card-header">
+        <h3>Bolão Atual do Grupo</h3>
+        <div class="inline-form">
+          <select id="bolao-select"></select>
+          <button id="btn-new-bolao" class="btn btn-primary">+ Novo Bolão</button>
+          <button id="btn-print-bolao-list" class="btn btn-ghost">Imprimir Lista A4</button>
+          <button id="btn-delete-bolao" class="btn btn-danger" title="Excluir este bolão permanentemente">🗑️ Excluir Bolão</button>
+        </div>
+      </div>
+
+      <div id="bolao-kpis" class="grid-4" style="margin-top:12px"></div>
+
+      <div class="summary-strip" style="margin-top:10px; align-items:flex-end">
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">
+          Números por Jogo (6 a 20)
+          <input type="number" id="bolao-cfg-dezenas" min="6" max="20" value="6" style="width:125px" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">
+          Jogos por Participante/Cota
+          <input type="number" id="bolao-cfg-jogos-cota" min="1" max="50" value="4" style="width:145px" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">
+          Valor por Jogo (R$)
+          <input type="number" id="bolao-cfg-valor-jogo" step="0.01" min="1" value="6.00" style="width:115px" />
+        </label>
+        <label style="display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)">
+          Valor da Cota (R$)
+          <input type="number" id="bolao-cfg-valor-cota" step="0.01" min="1" value="24.00" style="width:115px" />
+        </label>
+        <button id="btn-save-bolao-cfg" class="btn btn-primary">Aplicar Regras</button>
+        <span id="bolao-rule-badge" class="badge">Regra ativa: 6 dez. · 4 jogos/cota</span>
+      </div>
+    </section>
+
+    <!-- 2. CADASTRO + SORTEADOR POR REGRAS E PAGAMENTOS -->
+    <section class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>Registrar Aposta &amp; Sortear com Regras</h3>
+          <span id="aposta-limit-badge" class="badge">Selecionadas: 0 / 6</span>
+        </div>
+
+        <div class="form-grid" style="margin-bottom:10px">
+          <label>Participante (Lista Pré-Definida)
+            <select id="aposta-part-select"></select>
+          </label>
+          <label>Ou Adicionar Novo Nome Manualmente
+            <input type="text" id="aposta-novo-nome" placeholder="Digite o nome se não estiver na lista..." />
+          </label>
+        </div>
+
+        <div id="part-quota-box" class="part-quota-box"></div>
+
+        <div id="bolao-volante-picker" class="quadrants-board"></div>
+
+        <div class="inline-form" style="margin-top:10px">
+          <input type="text" id="aposta-text" placeholder="Ou digite dezenas: 04 12 23 35 44 59" style="flex:1" />
+          <button id="btn-add-aposta" class="btn btn-primary">Salvar Aposta</button>
+          <button id="btn-clear-picker" class="btn btn-ghost">Limpar</button>
+        </div>
+        <p class="muted" style="margin-top:6px;font-size:12px">Limite: exatamente 6 dezenas por jogo · Jogos duplicados proibidos.</p>
+
+        <div class="sorteio-actions-box" style="margin-top:12px;padding:12px;background:rgba(15,23,42,0.45);border:1px solid var(--border);border-radius:8px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button id="btn-sortear-uma" class="btn btn-ghost" style="width:100%;font-weight:700;border-color:var(--accent);color:var(--accent)">
+              🎲 Sortear 1 Aposta (6 dezenas)
+            </button>
+            <button id="btn-sortear-quota" class="btn btn-primary" style="width:100%;font-weight:700">
+              ⚡ Sortear 4 Jogos Inteiros (Regra Recomendada)
+            </button>
+          </div>
+          <p class="muted" style="margin:8px 0 0 0;font-size:11px;line-height:1.4">
+            Sorteios automáticos utilizam exclusivamente a <b>Regra Recomendada Oficial</b> (cobertura máxima de dezenas zeradas, pares inéditos e balanceamento anti-divisão).
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Participantes &amp; Pagamentos</h3>
+          <span class="badge">Entra automaticamente ao registrar aposta</span>
+        </div>
+        <div class="table-wrap max-520">
+          <table>
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th style="text-align:center">Cotas</th>
+                <th style="text-align:center">Jogos / Meta</th>
+                <th style="text-align:center">Pagamento</th>
+                <th style="text-align:right">Valor</th>
+                <th style="text-align:center">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="part-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. JOGOS DO BOLÃO & CONFERÊNCIA -->
+    <section id="sec-jogos" class="card">
+      <div class="card-header">
+        <h3>Jogos Registrados no Bolão</h3>
+        <div class="inline-form">
+          <input type="text" id="filtro-jogos" placeholder="Filtrar por nome ou dezena..." />
+          <button id="btn-conferir-modal" class="btn btn-ghost">🔍 Conferir Resultado</button>
+          <button id="btn-export-txt" class="btn btn-ghost">Exportar Jogos TXT</button>
+        </div>
+      </div>
+      <div class="table-wrap max-520">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Participante</th>
+              <th>Dezenas Marcadas</th>
+              <th>Soma</th>
+              <th>Pares</th>
+              <th>Acertos</th>
+              <th>Ação</th>
+            </tr>
+          </thead>
+          <tbody id="jogos-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. ESTATÍSTICA DO BOLÃO -->
+    <section id="sec-stats" class="card">
+      <div class="card-header">
+        <h3>Mapa de Calor &amp; Distribuição das 60 Dezenas no Bolão</h3>
+        <span class="badge">Densidade Estilo Excel: Verde (0) → Amarelo → Vermelho (Max)</span>
+      </div>
+      <div id="bolao-heatmap" class="heatmap-grid" style="margin-top:14px"></div>
+
+      <div class="grid-2" style="margin-top:20px">
+        <div>
+          <h4>📊 Quadrantes das Apostas</h4>
+          <div id="stats-quadrants-summary" style="margin-top:8px"></div>
+        </div>
+        <div>
+          <h4>⚖️ Proporção Par / Ímpar</h4>
+          <div id="stats-parity-summary" style="margin-top:8px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. IMPRESSÃO LOTÉRICA (ÓPTICA) -->
+    <section id="sec-impressao" class="card">
+      <div class="card-header">
+        <h3>Impressão dos Volantes (Marcação Óptica A4)</h3>
+        <span class="badge">Leitor Oficial Loterias Caixa</span>
+      </div>
+      <div class="print-config-pane">
+        <div class="print-controls-grid">
+          <div class="print-opt-strip">
+            <label class="check" style="font-weight:700;font-size:13px;color:var(--text);margin:0">
+              <input type="checkbox" id="print-teimosinha" /> Marcar Teimosinha
+            </label>
+            <span class="badge" style="background:#064e3b;color:#a7f3d0;border-color:#059669;font-weight:600">
+              ⚡ Otimizado: Máximo de 3 volantes (9 jogos) por página A4 no tamanho real óptico (83x185mm)
+            </span>
+          </div>
+
+          <div class="inline-form" style="margin-top:14px">
+            <button id="btn-print-slips" class="btn btn-primary">🖨️ Imprimir Volantes A4 (Máximo por Folha)</button>
+            <button id="btn-build-slips" class="btn btn-ghost">Atualizar Prévia</button>
+            <button id="btn-print-test" class="btn btn-ghost">Teste de Alinhamento</button>
+          </div>
+          <p class="muted" style="margin-top:8px;font-size:12px">
+            Configuração da impressora: Escala <b>100% (Tamanho Real)</b> · Orientação <b>Paisagem</b> · Margens <b>Nenhuma</b>.
+          </p>
+
+          <details class="rules-box" style="margin-top:14px">
+            <summary style="font-size:12px">⚙️ Opções Avançadas de Calibração Milimétrica (Opcional)</summary>
+            <div class="form-grid cal-grid" style="margin-top:10px">
+              <label>Offset X (mm)<input type="number" step="0.5" id="cal-offset-x" /></label>
+              <label>Offset Y Jogo 1 (mm)<input type="number" step="0.5" id="cal-offset-y" /></label>
+              <label>Passo Coluna (mm)<input type="number" step="0.1" id="cal-col-step" /></label>
+              <label>Passo Linha (mm)<input type="number" step="0.1" id="cal-row-step" /></label>
+              <label>Largura Marca (mm)<input type="number" step="0.1" id="cal-mark-w" /></label>
+              <label>Altura Marca (mm)<input type="number" step="0.1" id="cal-mark-h" /></label>
+              <label>Distância Jogo 2 (mm)<input type="number" step="0.5" id="cal-g2" /></label>
+              <label>Distância Jogo 3 (mm)<input type="number" step="0.5" id="cal-g3" /></label>
+              <label>Y Qtd Dezenas (mm)<input type="number" step="0.5" id="cal-qty-y" /></label>
+              <label>X Inicial Qtd 6 (mm)<input type="number" step="0.5" id="cal-qty-x" /></label>
+              <label>Passo X Qtd (mm)<input type="number" step="0.1" id="cal-qty-step" /></label>
+              <label>Tamanho Volante (mm)<input type="text" id="cal-size" /></label>
+            </div>
+            <div class="inline-form" style="margin-top:10px">
+              <button id="btn-save-profile" class="btn btn-sm">Salvar Calibração</button>
+            </div>
+          </details>
+        </div>
+
+        <div id="slips-preview" class="slips-preview-wrap"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL DE SINCRONIZAÇÃO EM TEMPO REAL VIA GOOGLE FIREBASE -->
+  <div id="cloud-modal" class="modal-overlay" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>☁️ Sincronização em Tempo Real (Google Firebase)</h3>
+        <button class="modal-close" id="btn-close-cloud-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-top:0;font-size:13px;color:var(--muted)">
+          Permite que o administrador e participantes acessem pelo celular ou computador em qualquer lugar, 24 horas por dia, com sincronização instantânea e sem depender de nenhum computador ligado.
+        </p>
+
+        <div class="card" style="padding:14px;background:var(--bg);border:1px solid var(--border);margin-bottom:12px">
+          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">
+            URL do Firebase Realtime Database
+            <input type="text" id="cfg-firebase-url" placeholder="https://seu-projeto-default-rtdb.firebaseio.com" style="width:100%;margin-top:4px" />
+          </label>
+          <div class="inline-form" style="margin-top:10px">
+            <button id="btn-save-cloud-config" class="btn btn-primary">Salvar e Conectar</button>
+            <button id="btn-use-local" class="btn btn-ghost">Usar Somente Local (Offline)</button>
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--muted);background:rgba(15,23,42,0.4);padding:10px;border-radius:6px;line-height:1.5">
+          <b>Como ativar em 1 minuto (100% gratuito):</b><br/>
+          1. Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> e crie um projeto.<br/>
+          2. No menu lateral, clique em <b>Criação → Realtime Database</b> → Criar Banco.<br/>
+          3. Em <b>Regras</b>, coloque <code>".read": true, ".write": true</code> e clique em Publicar.<br/>
+          4. Copie a URL do banco (ex: <code>https://nome-projeto-default-rtdb.firebaseio.com</code>) e cole acima.
+        </div>
+
+        <div class="inline-form" style="margin-top:14px;justify-content:space-between">
+          <button id="btn-export-json" class="btn btn-sm btn-ghost">💾 Baixar Backup Geral (JSON)</button>
+          <label class="btn btn-sm btn-ghost" style="cursor:pointer;margin:0">
+            📂 Restaurar Backup (JSON)
+            <input type="file" id="input-import-json" accept=".json" style="display:none" />
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFERÊNCIA DE RESULTADOS -->
+  <div id="conferir-modal" class="modal-overlay" style="display:none">
+    <div class="modal-card" style="max-width:780px">
+      <div class="modal-header">
+        <h3>🔍 Conferência do Bolão</h3>
+        <button class="modal-close" id="btn-close-conferir-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="inline-form" style="margin-bottom:12px">
+          <label style="flex:1">Dezenas Sorteadas (6 números)
+            <input type="text" id="conf-dezenas-input" placeholder="Ex: 05 10 18 24 39 52" />
+          </label>
+          <button id="btn-conf-executar" class="btn btn-primary" style="align-self:flex-end">Conferir</button>
+          <button id="btn-conf-print" class="btn btn-ghost" style="align-self:flex-end">🖨️ Imprimir / Salvar PDF</button>
+        </div>
+        <div id="conf-results-box"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="print-area" class="print-only"></div>
+  <div id="toast" class="toast no-print"></div>
+
+  <!-- SDKs Google Firebase compat (Vanilla / Zero Build) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+  <!-- Módulos da Aplicação V. 2.00 -->
+  <script src="stats_engine.js?v=2.00"></script>
+  <script src="printer_service.js?v=2.00"></script>
+  <script src="firebase_sync.js?v=2.00"></script>
+  <script src="app.js?v=2.00"></script>
+</body>
+</html>

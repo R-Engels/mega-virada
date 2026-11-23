@@ -1,0 +1,26 @@
+# Backups imutáveis locais
+Backup_Versao_*/
+
+# Binários e executáveis
+*.exe
+sistema/cloudflared.exe
+
+# Bancos de dados locais
+*.db
+sistema/data/*.db
+
+# Arquivos legados pesados (planilhas e PDFs)
+*.xlsx
+*.xlsm
+*.pdf
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Ambientes e temporários
+.venv/
+env/
+scratch/
+.system_generated/
