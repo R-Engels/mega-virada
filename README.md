@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.06 (Serverless)
+﻿# Mega-Sena Potenza — V. 2.08 (Serverless)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -24,22 +24,12 @@ Caso o link exiba erro 404, ative a publicação nas configurações do reposit�
 
 ---
 
-## ☁️ Como Ativar a Sincronização em Tempo Real (Celular e PC 24h)
+## ☁️ Sincronização em Tempo Real na Nuvem (Google Firebase)
 
-1. Acesse [console.firebase.google.com](https://console.firebase.google.com) (gratuito) e crie um projeto.
-2. No menu lateral, clique em **Criação** → **Realtime Database** → **Criar banco de dados**.
-3. Na aba **Regras**, configure:
-```json
-{
-  "rules": {
-    ".read": true,
-    ".write": true
-  }
-}
-```
-4. Copie a URL gerada (ex: `https://seu-projeto-default-rtdb.firebaseio.com/`).
-5. Abra a aplicação em [https://r-engels.github.io/mega-virada/](https://r-engels.github.io/mega-virada/).
-6. Clique no botão **☁️ Sincronização Nuvem (Firebase)** no cabeçalho, cole a URL e clique em **Salvar e Conectar**.
+A sincronização 24h na nuvem já está pré-configurada e ativa por padrão no banco:
+`https://bolao-potenza-virada-default-rtdb.firebaseio.com`
+
+Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via WebSocket em tempo real. Qualquer aposta criada, sorteada ou pagamento registrado reflete instantaneamente em todos os dispositivos conectados.
 
 ---
 

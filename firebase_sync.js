@@ -11,16 +11,23 @@ const FirebaseSync = (() => {
   let onDataCallback = null;
   let currentBolaoId = 2; // Padrão Bolão Potenza
 
-  // Configuração padrão ou customizada do usuário
+  // Configuração padrão oficial do Bolão Potenza na nuvem (Google Firebase)
+  const DEFAULT_FIREBASE_CONFIG = {
+    databaseURL: 'https://bolao-potenza-virada-default-rtdb.firebaseio.com'
+  };
+
   const STORAGE_KEY_CONFIG = 'megasena_firebase_config';
   const STORAGE_KEY_STATE = 'megasena_local_bolao_data';
 
   function getSavedConfig() {
     try {
       const c = localStorage.getItem(STORAGE_KEY_CONFIG);
-      if (c) return JSON.parse(c);
+      if (c) {
+        const parsed = JSON.parse(c);
+        if (parsed && parsed.databaseURL) return parsed;
+      }
     } catch (e) {}
-    return null;
+    return DEFAULT_FIREBASE_CONFIG;
   }
 
   function saveConfig(cfg) {

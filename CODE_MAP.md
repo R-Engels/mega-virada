@@ -1,20 +1,20 @@
-﻿﻿<!-- Versão: V. 2.07 (Serverless) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.08 (Serverless) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
 
-Aplicação 100% executável no navegador (client-side), sem dependência de servidor Python ou computador ligado. Compatível com GitHub Pages (`https://r-engels.github.io/mega-virada/`) e sincronização móvel em tempo real via Google Firebase Realtime Database.
+Aplicação 100% executável no navegador (client-side), sem dependência de servidor Python ou computador ligado. Compatível com GitHub Pages (`https://r-engels.github.io/mega-virada/`) e sincronização móvel em tempo real via Google Firebase Realtime Database oficial (`bolao-potenza-virada-default-rtdb.firebaseio.com`).
 
 ## Árvore de Diretórios
 
 ```text
 04 - Mega da Virada Potenza/
-├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.07)
+├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.08)
 ├── styles.css                   # Estilos responsivos (Header Fixo, 4 Quadrantes, Heatmap, Conferência)
-├── app.js                       # Controlador principal e eventos da interface (V. 2.07)
+├── app.js                       # Controlador principal e eventos da interface (V. 2.08)
 ├── stats_engine.js              # Motor matemático e sorteador com regra recomendada em JS
 ├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG
-├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage
+├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage (V. 2.08)
 ├── data/
 │   ├── concursos.json           # Base histórica compactada dos 3.087 concursos
 │   └── initial_state.json       # Estado inicial do Bolão Potenza e catálogo de nomes
@@ -28,14 +28,19 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_E/             # Backup imutável V. 2.05
 ├── Backup_Versao_F/             # Backup imutável V. 2.06
 ├── Backup_Versao_G/             # Backup imutável V. 2.07
+├── Backup_Versao_H/             # Backup imutável V. 2.08
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.07)
+## Fluxos de Operação (V. 2.08)
 
-1. **Menu Superior Fixo (Sticky Header)**:
+1. **Sincronização 24h na Nuvem Pré-Configurada (Zero Setup)**:
+   - Banco de dados em tempo real ativo no Google Firebase (`https://bolao-potenza-virada-default-rtdb.firebaseio.com`).
+   - O sistema conecta automaticamente ao carregar em qualquer navegador (desktop ou mobile), sem necessidade de digitação de URL pelo usuário final.
+   - Qualquer modificação (aposta manual, sorteada, exclusão ou pagamento) propaga para todos os clientes em menos de 100ms.
+2. **Menu Superior Fixo (Sticky Header)**:
    - Barra de navegação e botões superiores (`.topbar`) fixos no topo da janela com `position: sticky; top: 0; z-index: 1000`, `backdrop-filter: blur(8px)` e sombra suave, permanecendo acessíveis durante toda a rolagem da página.
-2. **Tabela de Jogos Registrados Limpa e Simplificada**:
+3. **Tabela de Jogos Registrados Limpa e Simplificada**:
    - As colunas técnicas "Soma" e "Pares" foram removidas da tabela de jogos registrados (`#jogos-tbody`), concentrando a visualização no que é essencial: `#`, `Participante`, `Dezenas Marcadas`, `Acertos` (com destaque de premiação) e `Ação`.
 
 1. **Conferência Visual Direta no Registro do Bolão**:
