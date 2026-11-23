@@ -248,6 +248,8 @@ function renderParticipantesTable(b) {
       const meta = (p.cotas || 1) * jogosPorCota;
       const valor = (p.cotas || 1) * (b.valor_cota || 24.0);
       const isPago = !!p.pago;
+      const isMetaOk = pJogos >= meta;
+      const faltam = meta - pJogos;
 
       return `
         <tr>
@@ -259,8 +261,11 @@ function renderParticipantesTable(b) {
               <button class="btn-cota" onclick="alterarCotas(${p.id}, 1)">+</button>
             </div>
           </td>
-          <td style="text-align:center;font-weight:600;color:${pJogos >= meta ? 'var(--accent)' : 'var(--warning)'}">
-            ${pJogos} / ${meta}
+          <td style="text-align:center">
+            ${isMetaOk
+              ? `<span class="meta-badge completo" title="Meta preenchida: ${pJogos} de ${meta} jogos">✅ ${pJogos} / ${meta}</span>`
+              : `<span class="meta-badge incompleto" title="Atenção: faltam ${faltam} jogo${faltam > 1 ? 's' : ''} para completar a meta!">⚠️ ${pJogos} / ${meta} (Falta${faltam > 1 ? 'm' : ''} ${faltam})</span>`
+            }
           </td>
           <td style="text-align:center">
             <span class="btn-pago-toggle ${isPago ? 'pago' : 'pendente'}" onclick="togglePagamento(${p.id})">
