@@ -115,13 +115,21 @@ function updateActionButtonsState(st) {
   const pickerBoard = $('#bolao-volante-picker');
   const btnAdd = $('#btn-add-aposta');
 
+  const selCount = state.bolaoPickerSelected.size;
+
   if (!st) {
     if (quotaBox) {
       quotaBox.innerHTML = '<span class="muted">Selecione ou digite um participante para gerenciar seus jogos.</span>';
     }
     if (btnUma) {
-      btnUma.textContent = '🎲 Sortear 1 Aposta (6 dezenas)';
       btnUma.disabled = false;
+      if (selCount > 0 && selCount < 6) {
+        btnUma.textContent = `🎯 Completar no Cartão (+${6 - selCount} dezenas)`;
+      } else if (selCount === 6) {
+        btnUma.textContent = `🎲 Sortear 1 Jogo Novo Direto pro Bolão`;
+      } else {
+        btnUma.textContent = '🎲 Sortear 1 Jogo Direto pro Bolão (6 dezenas)';
+      }
     }
     if (btnQuota) {
       btnQuota.textContent = '⚡ Sortear 4 Jogos Inteiros (Regra Recomendada)';
@@ -169,19 +177,17 @@ function updateActionButtonsState(st) {
     btnUma.disabled = false;
     const selCount = state.bolaoPickerSelected.size;
     if (selCount > 0 && selCount < 6) {
-      btnUma.textContent = `🎲 Completar Jogo ${st.proximoJogoIndex}/${st.maxJogos} (+${6 - selCount} dezenas)`;
+      btnUma.textContent = `🎯 Completar no Cartão (+${6 - selCount} dezenas)`;
+    } else if (selCount === 6) {
+      btnUma.textContent = `🎲 Sortear 1 Jogo Novo Direto pro Bolão`;
     } else {
-      btnUma.textContent = `🎲 Sortear Jogo ${st.proximoJogoIndex}/${st.maxJogos} (6 dezenas)`;
+      btnUma.textContent = `🎲 Sortear 1 Jogo Direto pro Bolão (6 dezenas)`;
     }
   }
 
   if (btnQuota) {
     btnQuota.disabled = false;
-    if (st.totalJogos === 0) {
-      btnQuota.textContent = `⚡ Sortear ${st.maxJogos} Jogos Inteiros da Cota (Regra Recomendada)`;
-    } else {
-      btnQuota.textContent = `⚡ Sortear ${st.restantes} Jogo${st.restantes > 1 ? 's' : ''} Restante${st.restantes > 1 ? 's' : ''} da Cota (Regra Recomendada)`;
-    }
+    btnQuota.textContent = `⚡ Sortear ${st.restantes} Jogo${st.restantes > 1 ? 's' : ''} Direto pro Bolão (Cota Completa)`;
   }
 }
 
@@ -227,7 +233,7 @@ function renderKpis(b) {
 function renderParticipantesTable(b) {
   const tbody = $('#part-tbody');
   if (!tbody || !b) return;
-  const parts = b.participantes || [];
+  const parts = (b.participantes || []).slice().reverse();
   const apostas = b.apostas || [];
   const jogosPorCota = b.jogos_por_cota || 4;
 
@@ -346,17 +352,49 @@ function renderHeatmap(b) {
   const legendMax = $('#heatmap-max-legend');
   if (legendMax) legendMax.textContent = `Frequência Máxima (${maxF}x)`;
 
-  let html = '';
-  for (let n = 1; n <= 60; n++) {
-    const f = numFreq[n];
-    const color = StatsEngine.getExcelHeatmapColor(f, minF, maxF);
+  const quadrants = {
+    1: { title: 'Q1 (01–25)', nums: [] },
+    2: { title: 'Q2 (06–30)', nums: [] },
+    3: { title: 'Q3 (31–55)', nums: [] },
+    4: { title: 'Q4 (36–60)', nums: [] },
+  };
+
+  for (let r = 0; r < 6; r++) {
+    for (let c = 0; c < 10; c++) {
+      const n = r * 10 + c + 1;
+      quadrants[StatsEngine.getQuadrant(n)].nums.push(n);
+    }
+  }
+
+  let html = '<div class="quadrants-board">';
+  for (let q = 1; q <= 4; q++) {
+    const qNums = quadrants[q].nums;
+    const qTotalDezenas = qNums.reduce((acc, n) => acc + numFreq[n], 0);
+
     html += `
-      <div class="heatmap-cell" style="background:${color}" title="Dezena ${String(n).padStart(2, '0')}: saiu ${f} vezes neste bolão">
-        <span class="cell-num">${String(n).padStart(2, '0')}</span>
-        <span class="cell-freq">${f}x</span>
+      <div class="quadrant-box q${q}">
+        <div class="quadrant-head">
+          <span>${quadrants[q].title}</span>
+          <span class="badge" style="font-size:10px">${qTotalDezenas} marcadas</span>
+        </div>
+        <div class="quadrant-grid">
+          ${qNums
+            .map((n) => {
+              const f = numFreq[n];
+              const color = StatsEngine.getExcelHeatmapColor(f, minF, maxF);
+              return `
+                <div class="heatmap-cell" style="background:${color}" title="Dezena ${String(n).padStart(2, '0')}: saiu ${f} vezes neste bolão">
+                  <span class="cell-num">${String(n).padStart(2, '0')}</span>
+                  <span class="cell-freq">${f}x</span>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
       </div>
     `;
   }
+  html += '</div>';
   el.innerHTML = html;
 
   // Resumo Quadrantes & Paridade
@@ -627,11 +665,34 @@ function sortearUmaAposta() {
   }
 
   const fixed = Array.from(state.bolaoPickerSelected);
+
+  // Se tiver de 1 a 5 dezenas marcadas no cartão: apenas completa no cartão para revisão do usuário
+  if (fixed.length > 0 && fixed.length < 6) {
+    const gen = StatsEngine.generatePotenzaGames({
+      quantidade: 1,
+      dezenas_por_jogo: 6,
+      base_existing: b.apostas || [],
+      fixed_nums: fixed,
+    });
+
+    if (!gen || !gen.jogos.length) {
+      toast('Não foi possível completar a aposta com os filtros atuais.', true);
+      return;
+    }
+
+    const sorteada = gen.jogos[0].dezenas;
+    state.bolaoPickerSelected = new Set(sorteada);
+    updatePickerUi();
+    toast('Aposta completada no cartão! Revise as dezenas e clique em "Salvar Aposta" para enviar ao bolão.');
+    return;
+  }
+
+  // Se tiver 0 ou 6 dezenas marcadas: sorteia jogo novo diretamente pro bolão
   const gen = StatsEngine.generatePotenzaGames({
     quantidade: 1,
     dezenas_por_jogo: 6,
     base_existing: b.apostas || [],
-    fixed_nums: fixed,
+    fixed_nums: [],
   });
 
   if (!gen || !gen.jogos.length) {
@@ -659,7 +720,7 @@ function sortearUmaAposta() {
     participante_nome: p.nome,
     tipo_aposta: 6,
     dezenas: sorteada,
-    origem: fixed.length > 0 ? 'completado_regra' : 'sorteio_regra',
+    origem: 'sorteio_regra',
     criado_em: new Date().toISOString(),
   };
 
@@ -670,7 +731,7 @@ function sortearUmaAposta() {
   updatePickerUi();
   persistAndBroadcast();
   renderAll();
-  toast(`Jogo ${st.proximoJogoIndex}/${st.maxJogos} sorteado e salvo para ${p.nome}!`);
+  toast(`Jogo ${st.proximoJogoIndex}/${st.maxJogos} sorteado e salvo direto no bolão para ${p.nome}!`);
 }
 
 // Sortear cota inteira
