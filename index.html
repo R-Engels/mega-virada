@@ -12,7 +12,7 @@
     <div class="brand">
       <span class="logo-dot">MS</span>
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.08 (Serverless)</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.09 (Nuvem 24h)</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -23,8 +23,7 @@
       <a class="tab" href="#sec-impressao">Impressão Lotérica (Óptica)</a>
     </nav>
     <div class="actions">
-      <span id="cloud-status-pill" class="badge badge-cloud-local">💾 Modo Local</span>
-      <button id="btn-cloud-modal" class="btn btn-outline" style="border-color:#38bdf8;color:#38bdf8">☁️ Sincronização Nuvem (Firebase)</button>
+      <span id="cloud-status-pill" class="badge badge-cloud-active" title="Sincronização 24h na Nuvem via Google Firebase">🟢 Nuvem 24h Conectada</span>
       <button id="btn-sync" class="btn btn-primary">Atualizar Resultado Caixa</button>
     </div>
   </header>
@@ -39,6 +38,11 @@
           <button id="btn-new-bolao" class="btn btn-primary">+ Novo Bolão</button>
           <button id="btn-print-bolao-list" class="btn btn-ghost">Imprimir Lista A4</button>
           <button id="btn-delete-bolao" class="btn btn-danger" title="Excluir este bolão permanentemente">🗑️ Excluir Bolão</button>
+          <button id="btn-export-json" class="btn btn-ghost" title="Baixar cópia de segurança em JSON">💾 Backup JSON</button>
+          <label class="btn btn-ghost" style="cursor:pointer;margin:0" title="Restaurar backup JSON">
+            📂 Restaurar JSON
+            <input type="file" id="input-import-json" accept=".json" style="display:none" />
+          </label>
         </div>
       </div>
 
@@ -275,48 +279,6 @@
     </section>
   </main>
 
-  <!-- MODAL DE SINCRONIZAÇÃO EM TEMPO REAL VIA GOOGLE FIREBASE -->
-  <div id="cloud-modal" class="modal-overlay" style="display:none">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3>☁️ Sincronização em Tempo Real (Google Firebase)</h3>
-        <button class="modal-close" id="btn-close-cloud-modal">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p style="margin-top:0;font-size:13px;color:var(--muted)">
-          Permite que o administrador e participantes acessem pelo celular ou computador em qualquer lugar, 24 horas por dia, com sincronização instantânea e sem depender de nenhum computador ligado.
-        </p>
-
-        <div class="card" style="padding:14px;background:var(--bg);border:1px solid var(--border);margin-bottom:12px">
-          <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">
-            URL do Firebase Realtime Database
-            <input type="text" id="cfg-firebase-url" value="https://bolao-potenza-virada-default-rtdb.firebaseio.com" placeholder="https://bolao-potenza-virada-default-rtdb.firebaseio.com" style="width:100%;margin-top:4px" />
-          </label>
-          <div class="inline-form" style="margin-top:10px">
-            <button id="btn-save-cloud-config" class="btn btn-primary">Salvar e Conectar</button>
-            <button id="btn-use-local" class="btn btn-ghost">Usar Somente Local (Offline)</button>
-          </div>
-        </div>
-
-        <div style="font-size:12px;color:var(--muted);background:rgba(15,23,42,0.4);padding:10px;border-radius:6px;line-height:1.5">
-          <b>Como ativar em 1 minuto (100% gratuito):</b><br/>
-          1. Acesse <a href="https://console.firebase.google.com" target="_blank" style="color:var(--accent)">console.firebase.google.com</a> e crie um projeto.<br/>
-          2. No menu lateral, clique em <b>Criação → Realtime Database</b> → Criar Banco.<br/>
-          3. Em <b>Regras</b>, coloque <code>".read": true, ".write": true</code> e clique em Publicar.<br/>
-          4. Copie a URL do banco (ex: <code>https://nome-projeto-default-rtdb.firebaseio.com</code>) e cole acima.
-        </div>
-
-        <div class="inline-form" style="margin-top:14px;justify-content:space-between">
-          <button id="btn-export-json" class="btn btn-sm btn-ghost">💾 Baixar Backup Geral (JSON)</button>
-          <label class="btn btn-sm btn-ghost" style="cursor:pointer;margin:0">
-            📂 Restaurar Backup (JSON)
-            <input type="file" id="input-import-json" accept=".json" style="display:none" />
-          </label>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <!-- MODAL DE CONFERÊNCIA DE RESULTADOS -->
   <div id="conferir-modal" class="modal-overlay" style="display:none">
     <div class="modal-card" style="max-width:780px">
@@ -344,10 +306,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.08 -->
-  <script src="stats_engine.js?v=2.08"></script>
-  <script src="printer_service.js?v=2.08"></script>
-  <script src="firebase_sync.js?v=2.08"></script>
-  <script src="app.js?v=2.08"></script>
+  <!-- Módulos da Aplicação V. 2.09 -->
+  <script src="stats_engine.js?v=2.09"></script>
+  <script src="printer_service.js?v=2.09"></script>
+  <script src="firebase_sync.js?v=2.09"></script>
+  <script src="app.js?v=2.09"></script>
 </body>
 </html>

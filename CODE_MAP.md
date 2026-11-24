@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.08 (Serverless) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.09 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -29,12 +29,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_F/             # Backup imutável V. 2.06
 ├── Backup_Versao_G/             # Backup imutável V. 2.07
 ├── Backup_Versao_H/             # Backup imutável V. 2.08
+│   ├── Backup_Versao_I/             # Backup imutável V. 2.09
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
 ## Fluxos de Operação (V. 2.08)
 
-1. **Sincronização 24h na Nuvem Pré-Configurada (Zero Setup)**:
+1. **Nuvem Firebase 24h como Padrão Único (Redundância Local Eliminada)**:
+   - Removida a seleção redundante de modo Local vs Nuvem.
+   - O sistema conecta automaticamente e opera exclusivamente no Google Firebase oficial (olao-potenza-virada-default-rtdb.firebaseio.com), mantendo cache local apenas para tolerância a falhas offline.
+   - Botões de Backup e Restauração JSON foram movidos diretamente para a seção de administração do Bolão.
    - Banco de dados em tempo real ativo no Google Firebase (`https://bolao-potenza-virada-default-rtdb.firebaseio.com`).
    - O sistema conecta automaticamente ao carregar em qualquer navegador (desktop ou mobile), sem necessidade de digitação de URL pelo usuário final.
    - Qualquer modificação (aposta manual, sorteada, exclusão ou pagamento) propaga para todos os clientes em menos de 100ms.

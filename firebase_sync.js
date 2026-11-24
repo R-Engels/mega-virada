@@ -1,13 +1,12 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.00 (Serverless)
- * Sincronização em Tempo Real via Google Firebase Realtime Database & LocalStorage
+ * Mega-Sena Potenza — V. 2.09 (Nuvem 24h Padrão)
+ * Sincronização em Tempo Real via Google Firebase Realtime Database
  */
 
 const FirebaseSync = (() => {
   let dbRef = null;
   let isConnected = false;
-  let isLocalMode = false;
   let onDataCallback = null;
   let currentBolaoId = 2; // Padrão Bolão Potenza
 
@@ -20,39 +19,21 @@ const FirebaseSync = (() => {
   const STORAGE_KEY_STATE = 'megasena_local_bolao_data';
 
   function getSavedConfig() {
-    try {
-      const c = localStorage.getItem(STORAGE_KEY_CONFIG);
-      if (c) {
-        const parsed = JSON.parse(c);
-        if (parsed && parsed.databaseURL) return parsed;
-      }
-    } catch (e) {}
     return DEFAULT_FIREBASE_CONFIG;
   }
 
   function saveConfig(cfg) {
-    if (!cfg) {
-      localStorage.removeItem(STORAGE_KEY_CONFIG);
-    } else {
-      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(cfg));
-    }
+    // Mantém compatibilidade sem alterar URL padrão
   }
 
   // Inicializa o Firebase
   function init(callback) {
     onDataCallback = callback;
-    const cfg = getSavedConfig();
-
-    if (!cfg || !cfg.databaseURL) {
-      setLocalMode(true);
-      loadLocalState();
-      return;
-    }
+    const cfg = DEFAULT_FIREBASE_CONFIG;
 
     try {
       if (!window.firebase || !window.firebase.database) {
-        console.warn('Firebase SDK não carregado. Operando em Modo Local.');
-        setLocalMode(true);
+        console.warn('Firebase SDK não carregado. Operando com cache offline.');
         loadLocalState();
         return;
       }
@@ -84,39 +65,28 @@ const FirebaseSync = (() => {
         }
       }, (err) => {
         console.error('Erro de permissão ou conexão Firebase:', err);
-        setLocalMode(true);
         loadLocalState();
+        updateStatusBadge();
       });
-
-      setLocalMode(false);
     } catch (err) {
       console.error('Falha ao inicializar Firebase:', err);
-      setLocalMode(true);
       loadLocalState();
+      updateStatusBadge();
     }
-  }
-
-  function setLocalMode(val) {
-    isLocalMode = val;
-    updateStatusBadge();
   }
 
   function updateStatusBadge() {
     const pill = document.getElementById('cloud-status-pill');
     if (!pill) return;
 
-    if (!isLocalMode && isConnected) {
+    if (isConnected) {
       pill.className = 'badge badge-cloud-active';
-      pill.innerHTML = '🟢 Nuvem Ativa (Tempo Real)';
-      pill.title = 'Sincronização 24h ativa via Firebase';
-    } else if (!isLocalMode && !isConnected) {
+      pill.innerHTML = '🟢 Nuvem 24h Conectada';
+      pill.title = 'Sincronização 24h em tempo real ativa via Google Firebase';
+    } else {
       pill.className = 'badge badge-cloud-connecting';
       pill.innerHTML = '🟡 Conectando Nuvem...';
       pill.title = 'Tentando conectar ao banco de dados em tempo real...';
-    } else {
-      pill.className = 'badge badge-cloud-local';
-      pill.innerHTML = '💾 Modo Local (Nuvem Desconectada)';
-      pill.title = 'Dados salvos neste dispositivo. Clique para configurar sincronização na nuvem.';
     }
   }
 
@@ -142,12 +112,12 @@ const FirebaseSync = (() => {
     } catch (e) {}
   }
 
-  // Salva no banco (nuvem + local)
+  // Salva no banco (nuvem + cache local)
   function saveState(data) {
     saveLocalBackup(data);
-    if (dbRef && !isLocalMode) {
+    if (dbRef) {
       return dbRef.set(data).catch((err) => {
-        console.warn('Erro ao salvar na nuvem (salvo localmente):', err);
+        console.warn('Erro ao salvar na nuvem (salvo em cache local):', err);
       });
     }
     return Promise.resolve();
@@ -158,7 +128,7 @@ const FirebaseSync = (() => {
     saveState,
     getSavedConfig,
     saveConfig,
-    isLocal: () => isLocalMode,
+    isLocal: () => false,
     isConnected: () => isConnected,
   };
 })();

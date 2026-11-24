@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.00 (Serverless)
+ * Mega-Sena Potenza — V. 2.09 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1229,39 +1229,6 @@ function bindEvents() {
   // Atualizar Caixa
   $('#btn-sync')?.addEventListener('click', atualizarResultadoCaixa);
 
-  // Cloud / Firebase Modal
-  $('#btn-cloud-modal')?.addEventListener('click', () => {
-    const modal = $('#cloud-modal');
-    modal.style.display = 'flex';
-    const cfg = FirebaseSync.getSavedConfig();
-    if (cfg && cfg.databaseURL) {
-      $('#cfg-firebase-url').value = cfg.databaseURL;
-    }
-  });
-
-  $('#btn-close-cloud-modal')?.addEventListener('click', () => {
-    $('#cloud-modal').style.display = 'none';
-  });
-
-  $('#btn-save-cloud-config')?.addEventListener('click', () => {
-    const url = ($('#cfg-firebase-url')?.value || '').trim();
-    if (!url.startsWith('https://')) {
-      toast('Informe uma URL HTTPS válida do Firebase Realtime Database.', true);
-      return;
-    }
-    FirebaseSync.saveConfig({ databaseURL: url });
-    $('#cloud-modal').style.display = 'none';
-    toast('Configuração salva. Conectando ao Firebase...');
-    location.reload();
-  });
-
-  $('#btn-use-local')?.addEventListener('click', () => {
-    FirebaseSync.saveConfig(null);
-    $('#cloud-modal').style.display = 'none';
-    toast('Operando em Modo Local (Offline).');
-    location.reload();
-  });
-
   // Exportar / Importar JSON
   $('#btn-export-json')?.addEventListener('click', () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(localStorage.getItem('megasena_local_bolao_data') || '{}');
@@ -1285,7 +1252,6 @@ function bindEvents() {
           persistAndBroadcast();
           renderAll();
           toast('Backup restaurado com sucesso!');
-          $('#cloud-modal').style.display = 'none';
         }
       } catch (err) {
         toast('Arquivo JSON inválido.', true);
