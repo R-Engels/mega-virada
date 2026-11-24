@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.13 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.14 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -34,12 +34,21 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_K/             # Backup imutável V. 2.11
 │   ├── Backup_Versao_L/             # Backup imutável V. 2.12
 │   ├── Backup_Versao_M/             # Backup imutável V. 2.13
+│   ├── Backup_Versao_N/             # Backup imutável V. 2.14
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.13)
+## Fluxos de Operação (V. 2.14)
 
-1. **Remoção da Legenda Redundante do Mapa de Calor**:
+1. **Impressão da Lista de Jogos Formatada em 3 Colunas**:
+   - Substituído o botão Exportar TXT por "🖨️ Imprimir Lista de Jogos", gerando folha A4 oficial com cabeçalho do bolão e cartões de jogos distribuídos em 3 colunas organizadas.
+2. **Confirmação ao Excluir Jogos**:
+   - Adicionado diálogo de confirmação `confirm(...)` com identificação do participante e dezenas antes de apagar qualquer aposta.
+3. **Correção Visual de Espaçamento dos KPIs**:
+   - Reestruturados os cards de resumo com container `.kpi`, separando adequadamente rótulos e valores.
+4. **Remoção de Legendas na Seção de Impressão**:
+   - Removidas as legendas "Leitor Oficial" e "⚡ Otimizado..." do painel de impressão óptica.
+5. **Remoção da Legenda Redundante do Mapa de Calor**:
    - Removido o badge "Modelo Volante Caixa Oficial (Dividido em 4 Quadrantes) · Escala Excel" do cabeçalho da seção de estatísticas, deixando a interface mais limpa.
 2. **Remoção dos Botões de Backup/Restaurar JSON**:
    - Eliminados os botões manuais de Backup JSON e Restaurar JSON da interface, garantindo integridade e dependência exclusiva da nuvem Firebase 24h em tempo real.

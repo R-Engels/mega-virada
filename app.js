@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.13 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.14 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -226,10 +226,22 @@ function renderKpis(b) {
   const totalArrecadado = totalCotas * (b.valor_cota || 24.0);
 
   el.innerHTML = `
-    <div class="kpi-card"><span class="kpi-val">${apostas.length}</span><span class="kpi-lbl">Total de Jogos</span></div>
-    <div class="kpi-card"><span class="kpi-val">${parts.length}</span><span class="kpi-lbl">Participantes (${pagos} Pagos)</span></div>
-    <div class="kpi-card"><span class="kpi-val">${totalCotas}</span><span class="kpi-lbl">Total de Cotas</span></div>
-    <div class="kpi-card"><span class="kpi-val">R$ ${totalArrecadado.toFixed(2)}</span><span class="kpi-lbl">Arrecadação Estimada</span></div>
+    <div class="kpi">
+      <div class="label">Total de Jogos</div>
+      <div class="value">${apostas.length}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Participantes (${pagos} Pagos)</div>
+      <div class="value">${parts.length}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Total de Cotas</div>
+      <div class="value">${totalCotas}</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Arrecadação Estimada</div>
+      <div class="value">R$ ${totalArrecadado.toFixed(2)}</div>
+    </div>
   `;
 }
 
@@ -587,6 +599,12 @@ window.excluirParticipante = function (partId) {
 window.excluirAposta = function (apostaId) {
   const b = getCurrentBolao();
   if (!b) return;
+  const aposta = (b.apostas || []).find((a) => a.id === apostaId);
+  const partNome = aposta?.participante_nome || 'Participante';
+  const dez = (aposta?.dezenas || []).map((n) => String(n).padStart(2, '0')).join(', ');
+  if (!confirm(`Deseja realmente excluir este jogo de ${partNome}?\nDezenas: [ ${dez} ]`)) {
+    return;
+  }
   b.apostas = (b.apostas || []).filter((a) => a.id !== apostaId);
   persistAndBroadcast();
   renderAll();
@@ -857,6 +875,59 @@ function printSlips() {
   if (!printArea || !state.slipsPayload) return;
 
   printArea.innerHTML = PrinterService.renderPrintArea(state.slipsPayload);
+  window.print();
+}
+
+function imprimirListaJogos() {
+  const b = getCurrentBolao();
+  if (!b) {
+    toast('Selecione um bolão primeiro.', true);
+    return;
+  }
+  const apostas = b.apostas || [];
+  if (!apostas.length) {
+    toast('Nenhum jogo registrado para imprimir.', true);
+    return;
+  }
+
+  const printArea = $('#print-area');
+  if (!printArea) return;
+
+  const dataEmissao = new Date().toLocaleDateString('pt-BR');
+  const horaEmissao = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  const totalCotas = (b.participantes || []).reduce((acc, p) => acc + (p.cotas || 1), 0);
+
+  const cardsHtml = apostas.map((a, idx) => {
+    const balls = (a.dezenas || []).map((d) => `<span class="pg-ball">${String(d).padStart(2, '0')}</span>`).join('');
+    return `
+      <div class="print-game-card">
+        <div class="pg-header">
+          <span class="pg-idx">#${idx + 1}</span>
+          <span class="pg-name" title="${a.participante_nome || ''}">${a.participante_nome || 'PARTICIPANTE'}</span>
+        </div>
+        <div class="pg-balls">${balls}</div>
+      </div>
+    `;
+  }).join('');
+
+  printArea.innerHTML = `
+    <div class="print-games-sheet">
+      <div class="print-games-header">
+        <div>
+          <h2 style="margin:0;font-size:18px;color:#059669">Mega-Sena Potenza — Lista Oficial de Jogos</h2>
+          <div style="font-size:12px;color:#475569;margin-top:2px">Bolão: <b>${b.nome}</b> · Regra: ${b.dezenas_por_jogo || 6} dezenas por jogo</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:#64748b">
+          <div>Total de Jogos: <b>${apostas.length}</b> · Cotas: <b>${totalCotas}</b></div>
+          <div>Emissão: ${dataEmissao} às ${horaEmissao}</div>
+        </div>
+      </div>
+      <div class="print-games-grid">
+        ${cardsHtml}
+      </div>
+    </div>
+  `;
+
   window.print();
 }
 
@@ -1195,7 +1266,8 @@ function bindEvents() {
   $('#btn-build-slips')?.addEventListener('click', buildSlipsPreview);
   $('#btn-print-slips')?.addEventListener('click', printSlips);
   $('#print-teimosinha')?.addEventListener('change', buildSlipsPreview);
-  $('#btn-print-bolao-list')?.addEventListener('click', () => window.print());
+  $('#btn-print-bolao-list')?.addEventListener('click', imprimirListaJogos);
+  $('#btn-print-jogos-list')?.addEventListener('click', imprimirListaJogos);
 
   // Conferência Visual Direta no Registro
   $('#btn-quick-conf-ultimo')?.addEventListener('click', () => {

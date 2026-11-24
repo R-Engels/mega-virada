@@ -83,9 +83,12 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-.kpi .label { font-size: 12px; color: var(--muted); }
-.kpi .value { font-size: 20px; font-weight: 700; margin-top: 4px; color: var(--accent); }
+.kpi .label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.kpi .value { font-size: 20px; font-weight: 800; color: var(--accent); }
 
 .btn {
   background: var(--surface-2); color: var(--text);
@@ -723,6 +726,86 @@ th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background
   .a4-slips-row { display: flex; flex-wrap: wrap; gap: 8mm; align-items: flex-start; }
   .bolao-print-table { width: 100%; border-collapse: collapse; font-size: 10pt; color: #000; }
   .bolao-print-table th, .bolao-print-table td { border: 1px solid #333; padding: 4px 6px; background: #fff !important; color: #000 !important; }
+  .print-games-sheet { padding: 5mm !important; }
+  .print-games-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+  }
+  .print-game-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+}
+
+/* Lista de Jogos Formatada (2 a 3 Colunas) */
+.print-games-sheet {
+  padding: 10mm;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+  background: #ffffff;
+}
+.print-games-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #059669;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+.print-games-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.print-game-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.print-game-card .pg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 3px;
+  font-size: 11px;
+}
+.print-game-card .pg-idx {
+  font-weight: 800;
+  color: #0f172a;
+}
+.print-game-card .pg-name {
+  font-weight: 700;
+  color: #059669;
+  text-transform: uppercase;
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.print-game-card .pg-balls {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+.print-game-card .pg-ball {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0f172a;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  border: 1px solid #334155;
 }
 
 .print-opt-strip {
