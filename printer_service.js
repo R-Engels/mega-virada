@@ -1,8 +1,8 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.19 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.20 (Nuvem 24h Padrão)
  * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (83x185mm)
- * Cabeçalho exclusivo com identificação de jogos e participantes (área livre do sensor)
+ * Cabeçalho exclusivo com identificação contínua de jogos e participantes
  */
 
 const PrinterService = (() => {
@@ -155,9 +155,10 @@ const PrinterService = (() => {
       const rawNome = (jogo.participante_nome || 'PARTICIPANTE').toUpperCase().trim();
       const nomeCurto = rawNome.length > 28 ? rawNome.substring(0, 26) + '..' : rawNome;
       const dezenasStr = (jogo.dezenas || []).map(n => String(n).padStart(2, '0')).join(' ');
+      const gameNum = jogo.global_index || (idx + 1);
       const lineY = 5.5 + idx * 4.4;
 
-      svg += `<text x="4" y="${lineY.toFixed(1)}" font-size="2.4" font-weight="bold" fill="#000000" font-family="Arial, sans-serif">${idx + 1}: ${escapeXml(nomeCurto)}:  ${dezenasStr}</text>`;
+      svg += `<text x="4" y="${lineY.toFixed(1)}" font-size="2.4" font-weight="bold" fill="#000000" font-family="Arial, sans-serif">${gameNum}: ${escapeXml(nomeCurto)}:  ${dezenasStr}</text>`;
     });
 
     // Desenhar cada marca óptica preta (retângulo preenchido de preto)

@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.19 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.20 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -882,9 +882,6 @@ function buildSlipsPreview() {
         <div style="font-size:12px;color:#0f172a;margin-bottom:6px;font-weight:700;display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:4px;">
           <span>Volante #${s.slip_index} de ${payload.total_slips}</span>
           <span style="font-size:10px;color:#64748b;font-weight:normal;">${s.total_jogos} jogo(s)</span>
-        </div>
-        <div style="font-size:10px;color:#334155;margin-bottom:8px;background:#f8fafc;padding:6px;border-radius:6px;border:1px solid #e2e8f0;line-height:1.45;">
-          ${s.jogos.map(j => `<div><strong>${j.game_idx_in_slip}:</strong> ${(j.participante_nome || 'PARTICIPANTE').toUpperCase()}:  <span style="font-family:monospace;font-weight:600;color:#0f172a">${(j.dezenas || []).map(d => String(d).padStart(2, '0')).join(' ')}</span></div>`).join('')}
         </div>
         ${PrinterService.renderSlipSvg(s, payload.profile, true)}
       </div>

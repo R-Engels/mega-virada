@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.19 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.20 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -40,12 +40,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_Q/             # Backup imutável V. 2.17
 │   ├── Backup_Versao_R/             # Backup imutável V. 2.18
 │   ├── Backup_Versao_S/             # Backup imutável V. 2.19
+│   ├── Backup_Versao_T/             # Backup imutável V. 2.20
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.19)
+## Fluxos de Operação (V. 2.20)
 
-1. **Cabeçalho Exclusivo e Área Óptica Limpa nos Volantes**:
+1. **Numeração Global Contínua dos Jogos no Cabeçalho dos Volantes**:
+   - O numeral no cabeçalho do volante agora acompanha a sequência contínua de jogos registrados no bolão (`jogo.global_index`). Ex: Volante 1 (`1:`, `2:`, `3:`), Volante 2 (`4:`, `5:`, `6:`), Volante 3 (`7:`, `8:`...).
+2. **Eliminação de Duplicação no Visualizador de Prévia**:
+   - Removido o bloco textual repetitivo acima de cada cartão de prévia no visualizador, exibindo exclusivamente o título do volante e a renderização óptica fiel do cartão SVG.
+3. **Cabeçalho Exclusivo e Área Óptica Limpa nos Volantes**:
    - Dados de participante e dezenas centralizados estritamente no topo/cabeçalho de cada volante (`1: NOME:  dezenas`, `2: NOME:  dezenas`, `3: NOME:  dezenas`), sem nenhuma marcação de texto intermediária ou rodapé na grade.
    - Preservação absoluta das zonas de leitura dos sensores ópticos da leitora da Caixa, evitando rejeições ou ruídos na passagem mecânica do volante.
 2. **Correção do Layout de Impressão de Volantes (3 por Folha A4 Paisagem)**:
