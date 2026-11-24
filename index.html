@@ -3,31 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.20 (Nuvem 24h)</title>
+  <title>Mega-Sena Potenza — V. 2.21</title>
   <link rel="stylesheet" href="styles.css?v=2.08" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
   <header class="topbar no-print">
     <div class="brand">
-      <span class="logo-dot">MS</span>
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.20 (Nuvem 24h)</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.21</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
     <nav class="tabs">
-      <a class="tab active" href="#sec-bolao">Bolão &amp; Cadastro</a>
+      <a class="tab active" href="#sec-bolao">Bolão</a>
+      <a class="tab" href="#sec-aposta">Registrar &amp; Sortear</a>
       <a class="tab" href="#sec-jogos">Jogos &amp; Conferência</a>
       <a class="tab" href="#sec-stats">Estatística do Bolão</a>
-      <a class="tab" href="#sec-impressao">Impressão Lotérica (Óptica)</a>
+      <a class="tab" href="#sec-impressao">Impressão Lotérica</a>
     </nav>
     <div class="actions">
       <button id="btn-theme-toggle" class="btn btn-ghost" title="Alternar tema claro/escuro" style="padding:6px 10px;font-size:14px;display:inline-flex;align-items:center;gap:5px">
         <span id="theme-icon">🌙</span> <span id="theme-label" style="font-size:12px">Escuro</span>
       </button>
-      <span id="cloud-status-pill" class="badge badge-cloud-active" title="Sincronização 24h na Nuvem via Google Firebase">🟢 Nuvem 24h Conectada</span>
-      <button id="btn-sync" class="btn btn-primary">Atualizar Resultado Caixa</button>
+      <span id="cloud-status-pill" class="badge badge-cloud-active" title="Nuvem 24h Conectada (Google Firebase)" style="padding:4px 8px;font-size:13px;cursor:help;">🟢</span>
+      <button id="btn-sync" class="btn btn-primary" title="Atualizar Resultado Oficial da Caixa">
+        <span class="btn-text-full">Atualizar Resultado Caixa</span>
+        <span class="btn-text-short">Atualizar</span>
+      </button>
     </div>
   </header>
 
@@ -70,7 +73,7 @@
 
     <!-- 2. CADASTRO + SORTEADOR POR REGRAS E PAGAMENTOS -->
     <section class="grid-2">
-      <div class="card">
+      <div id="sec-aposta" class="card">
         <div class="card-header">
           <h3>Registrar Aposta &amp; Sortear com Regras</h3>
           <span id="aposta-limit-badge" class="badge">Selecionadas: 0 / 6</span>
@@ -305,10 +308,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.20 -->
-  <script src="stats_engine.js?v=2.20"></script>
-  <script src="printer_service.js?v=2.20"></script>
-  <script src="firebase_sync.js?v=2.20"></script>
-  <script src="app.js?v=2.20"></script>
+  <!-- Módulos da Aplicação V. 2.21 -->
+  <script src="stats_engine.js?v=2.21"></script>
+  <script src="printer_service.js?v=2.21"></script>
+  <script src="firebase_sync.js?v=2.21"></script>
+  <script src="app.js?v=2.21"></script>
 </body>
 </html>

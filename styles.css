@@ -53,6 +53,7 @@ body {
   display: grid; place-items: center; font-weight: 800;
 }
 
+.btn-text-short { display: none; }
 .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
 .tab {
   background: transparent; color: var(--muted);
@@ -73,6 +74,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 14px;
+  scroll-margin-top: 85px;
   margin-bottom: 14px;
 }
 .card h3, .card h4 { margin: 0 0 10px; }
@@ -1016,9 +1018,78 @@ th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background
 @media (max-width: 900px) {
   .grid-2 { grid-template-columns: 1fr !important; }
   .grid-4 { grid-template-columns: 1fr 1fr !important; }
-  .tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
-  .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .topbar .actions { width: 100%; display: flex; justify-content: space-between; }
+
+  /* Barra de navegação e atalhos 100% fixa no celular */
+  .topbar {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
+    padding: 8px 12px !important;
+    gap: 8px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: var(--topbar-bg) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    box-shadow: var(--topbar-shadow) !important;
+  }
+  .brand {
+    order: 1 !important;
+    gap: 6px !important;
+  }
+  .brand h1 {
+    font-size: 15px !important;
+  }
+  .brand small {
+    font-size: 11px !important;
+  }
+  .brand p#sync-banner {
+    display: none !important;
+  }
+  .topbar .actions {
+    order: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: auto !important;
+  }
+  .topbar .actions #btn-sync {
+    padding: 5px 8px !important;
+    font-size: 11px !important;
+  }
+  .btn-text-full { display: none !important; }
+  .btn-text-short { display: inline !important; }
+  .topbar .actions #btn-theme-toggle {
+    padding: 5px 6px !important;
+  }
+  .topbar .actions #btn-theme-toggle #theme-label {
+    display: none !important;
+  }
+  .tabs {
+    order: 3 !important;
+    width: 100% !important;
+    display: flex !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    white-space: nowrap !important;
+    gap: 6px !important;
+    padding: 4px 0 2px 0 !important;
+    margin: 0 !important;
+    scrollbar-width: none !important;
+  }
+  .tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+  .tab {
+    flex-shrink: 0 !important;
+    padding: 6px 11px !important;
+    font-size: 12px !important;
+  }
 }
 
 .badge-cloud-active { background: #064e3b; color: #a7f3d0; border-color: #059669; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; }

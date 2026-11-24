@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.20 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.21 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -41,12 +41,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_R/             # Backup imutável V. 2.18
 │   ├── Backup_Versao_S/             # Backup imutável V. 2.19
 │   ├── Backup_Versao_T/             # Backup imutável V. 2.20
+│   ├── Backup_Versao_U/             # Backup imutável V. 2.21
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.20)
+## Fluxos de Operação (V. 2.21)
 
-1. **Numeração Global Contínua dos Jogos no Cabeçalho dos Volantes**:
+1. **Cabeçalho Limpo e Barra de Atalhos Fixa no Celular**:
+   - Remoção do ícone 'MS' e do texto redundante '(Nuvem 24h)' do cabeçalho superior.
+   - Indicador de sincronização em nuvem reduzido exclusivamente à bolinha verde ('🟢'), mantendo tooltip detalhado.
+   - Adicionado botão de atalho dedicado 'Registrar & Sortear' na barra superior para acesso direto à grade de marcação de apostas e sorteios.
+   - Barra de botões de atalho fixada no celular ('position: sticky; top: 0') com rolagem horizontal suave e compensação 'scroll-margin-top: 85px' nos cartões.
+2. **Numeração Global Contínua dos Jogos no Cabeçalho dos Volantes**:
    - O numeral no cabeçalho do volante agora acompanha a sequência contínua de jogos registrados no bolão (`jogo.global_index`). Ex: Volante 1 (`1:`, `2:`, `3:`), Volante 2 (`4:`, `5:`, `6:`), Volante 3 (`7:`, `8:`...).
 2. **Eliminação de Duplicação no Visualizador de Prévia**:
    - Removido o bloco textual repetitivo acima de cada cartão de prévia no visualizador, exibindo exclusivamente o título do volante e a renderização óptica fiel do cartão SVG.

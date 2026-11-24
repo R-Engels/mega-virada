@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.20 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.21 (Nuvem 24h Padrão)
  * Sincronização em Tempo Real via Google Firebase Realtime Database
  */
 
@@ -81,12 +81,12 @@ const FirebaseSync = (() => {
 
     if (isConnected) {
       pill.className = 'badge badge-cloud-active';
-      pill.innerHTML = '🟢 Nuvem 24h Conectada';
-      pill.title = 'Sincronização 24h em tempo real ativa via Google Firebase';
+      pill.innerHTML = '🟢';
+      pill.title = 'Nuvem 24h Conectada (Google Firebase)';
     } else {
       pill.className = 'badge badge-cloud-connecting';
-      pill.innerHTML = '🟡 Conectando Nuvem...';
-      pill.title = 'Tentando conectar ao banco de dados em tempo real...';
+      pill.innerHTML = '🟡';
+      pill.title = 'Conectando Nuvem...';
     }
   }
 
