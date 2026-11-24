@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.10 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.11 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -31,12 +31,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_H/             # Backup imutável V. 2.08
 │   ├── Backup_Versao_I/             # Backup imutável V. 2.09
 │   ├── Backup_Versao_J/             # Backup imutável V. 2.10
+│   ├── Backup_Versao_K/             # Backup imutável V. 2.11
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.10)
+## Fluxos de Operação (V. 2.11)
 
-1. **Remoção de Caixa e Texto Redundante de Participante**:
+1. **Alternância de Tema Claro e Escuro (Light/Dark Mode)**:
+   - Botão seletor no topo da janela (`#btn-theme-toggle`) para alternar instantaneamente entre tema escuro padrão e tema claro de alta visibilidade.
+   - Variáveis CSS responsivas (`[data-theme="light"]`) aplicadas dinamicamente com persistência no LocalStorage (`megasena_theme`).
+2. **Remoção de Caixa e Texto Redundante de Participante**:
    - Eliminada a caixa inicial com o texto "Selecione ou digite um participante para gerenciar seus jogos", liberando espaço vertical e posicionando o volante de quadrantes diretamente abaixo dos inputs.
    - O container de status da cota aparece apenas de forma dinâmica quando um participante específico é selecionado.
 2. **Nuvem Firebase 24h como Padrão Único (Redundância Local Eliminada)**:

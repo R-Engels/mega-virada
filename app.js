@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.10 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.11 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1269,8 +1269,42 @@ function bindEvents() {
   });
 }
 
+// ===== GERENCIAMENTO DE TEMA (CLARO / ESCURO) =====
+function initTheme() {
+  const savedTheme = localStorage.getItem('megasena_theme') || 'dark';
+  applyTheme(savedTheme);
+
+  $('#btn-theme-toggle')?.addEventListener('click', () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const nextTheme = isLight ? 'dark' : 'light';
+    applyTheme(nextTheme);
+    localStorage.setItem('megasena_theme', nextTheme);
+  });
+}
+
+function applyTheme(theme) {
+  if (theme === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    const icon = $('#theme-icon');
+    const label = $('#theme-label');
+    const btn = $('#btn-theme-toggle');
+    if (icon) icon.textContent = '☀️';
+    if (label) label.textContent = 'Claro';
+    if (btn) btn.title = 'Alternar para tema escuro';
+  } else {
+    document.documentElement.removeAttribute('data-theme');
+    const icon = $('#theme-icon');
+    const label = $('#theme-label');
+    const btn = $('#btn-theme-toggle');
+    if (icon) icon.textContent = '🌙';
+    if (label) label.textContent = 'Escuro';
+    if (btn) btn.title = 'Alternar para tema claro';
+  }
+}
+
 // Inicializar aplicação
 (async function init() {
+  initTheme();
   initPicker();
   bindEvents();
   await loadInitialData();
