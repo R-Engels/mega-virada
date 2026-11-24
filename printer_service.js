@@ -1,8 +1,8 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.22 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.23 (Nuvem 24h Padrão)
  * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (83x185mm)
- * Cabeçalho exclusivo com identificação contínua de jogos e participantes
+ * Prévia visual com grade de conferência + impressão óptica limpa para leitora
  */
 
 const PrinterService = (() => {
@@ -41,13 +41,18 @@ const PrinterService = (() => {
   function getProfile() {
     try {
       const saved = localStorage.getItem('megasena_print_profile');
-      if (saved) return JSON.parse(saved);
+      if (saved) return { ...DEFAULT_PROFILE, ...JSON.parse(saved) };
     } catch (e) {}
     return { ...DEFAULT_PROFILE };
   }
 
   function saveProfile(prof) {
     localStorage.setItem('megasena_print_profile', JSON.stringify(prof));
+  }
+
+  function resetProfile() {
+    localStorage.removeItem('megasena_print_profile');
+    return { ...DEFAULT_PROFILE };
   }
 
   function buildSlipsPayload(games, options = {}) {
@@ -138,30 +143,91 @@ const PrinterService = (() => {
     };
   }
 
-  // Gera HTML/SVG de 1 volante óptico oficial com identificação visual clara
-  function renderSlipSvg(slip, profile, showOutline = true) {
+  function buildAlignmentTestPayload(profile) {
+    const prof = profile || getProfile();
+    const testGames = [
+      { global_index: 1, participante_nome: 'TESTE ALINHAMENTO J1', dezenas: [1, 10, 25, 36, 51, 60] },
+      { global_index: 2, participante_nome: 'TESTE ALINHAMENTO J2', dezenas: [1, 10, 25, 36, 51, 60] },
+      { global_index: 3, participante_nome: 'TESTE ALINHAMENTO J3', dezenas: [1, 10, 25, 36, 51, 60] },
+    ];
+    return buildSlipsPayload(testGames, { profile: prof, teimosinha: false });
+  }
+
+  // Gera HTML/SVG de 1 volante óptico oficial (83x185mm)
+  // opts: boolean (showOutline) ou { showOutline, isPreview }
+  function renderSlipSvg(slip, profile, opts = true) {
+    const isPreview = typeof opts === 'object' ? !!opts.isPreview : false;
+    const showOutline = typeof opts === 'object' ? opts.showOutline !== false : !!opts;
+
     const w = profile.volante_w_mm;
     const h = profile.volante_h_mm;
+    const styleAttr = isPreview
+      ? 'width:100%;height:auto;display:block;'
+      : `width:${w}mm;height:${h}mm;display:block;`;
 
-    let svg = `<svg viewBox="0 0 ${w} ${h}" class="slip-svg" style="width:${w}mm;height:${h}mm;display:block;" xmlns="http://www.w3.org/2000/svg">`;
+    let svg = `<svg viewBox="0 0 ${w} ${h}" class="slip-svg" style="${styleAttr}" xmlns="http://www.w3.org/2000/svg">`;
 
-    // Fundo do volante e contorno de corte
-    if (showOutline) {
-      svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="0.35"/>`;
+    // Fundo branco do volante e contorno de corte
+    svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#ffffff"${showOutline ? ' stroke="#cbd5e1" stroke-dasharray="1.8,1.8" stroke-width="0.3"' : ''}/>`;
+
+    // Cabeçalho exclusivo no topo (área livre do sensor óptico)
+    if (isPreview) {
+      svg += `<rect x="2.5" y="2" width="${(w - 5).toFixed(1)}" height="14.5" rx="1.2" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.25"/>`;
     }
-
-    // Cabeçalho exclusivo com identificação dos jogos e participantes (área livre do sensor óptico)
     slip.jogos.forEach((jogo, idx) => {
       const rawNome = (jogo.participante_nome || 'PARTICIPANTE').toUpperCase().trim();
-      const nomeCurto = rawNome.length > 28 ? rawNome.substring(0, 26) + '..' : rawNome;
-      const dezenasStr = (jogo.dezenas || []).map(n => String(n).padStart(2, '0')).join(' ');
+      const nomeCurto = rawNome.length > 24 ? rawNome.substring(0, 22) + '..' : rawNome;
+      const dezenasStr = (jogo.dezenas || []).map((n) => String(n).padStart(2, '0')).join(' ');
       const gameNum = jogo.global_index || (idx + 1);
-      const lineY = 5.5 + idx * 4.4;
+      const lineY = 5.4 + idx * 4.2;
 
-      svg += `<text x="4" y="${lineY.toFixed(1)}" font-size="2.4" font-weight="bold" fill="#000000" font-family="Arial, sans-serif">${gameNum}: ${escapeXml(nomeCurto)}:  ${dezenasStr}</text>`;
+      svg += `<text x="4" y="${lineY.toFixed(1)}" font-size="2.25" font-weight="700" fill="#0f172a" font-family="Arial, Helvetica, sans-serif">${gameNum}: ${escapeXml(nomeCurto)}: ${dezenasStr}</text>`;
     });
 
-    // Desenhar cada marca óptica preta (retângulo preenchido de preto)
+    // Grade guia visual (APENAS na prévia na tela — nunca impressa no volante óptico)
+    if (isPreview) {
+      const gridW = 9 * profile.col_step_mm + profile.mark_w_mm + 2.4;
+      const gridH = 5 * profile.row_step_mm + profile.mark_h_mm + 2.4;
+
+      [0, 1, 2].forEach((gIdx) => {
+        const offsetY = profile.game_offsets[gIdx] || (gIdx * 48.0);
+        const isUsed = gIdx < slip.jogos.length;
+        const opacity = isUsed ? 1 : 0.35;
+
+        svg += `<g opacity="${opacity}">`;
+        // Faixa de título e Qtd do bloco
+        const qtyY = profile.qty_offset_y_mm + offsetY;
+        svg += `<text x="${profile.offset_x_mm}" y="${(qtyY - 1.2).toFixed(1)}" font-size="2.1" font-weight="700" fill="#059669" font-family="Arial, sans-serif">JOGO ${gIdx + 1}</text>`;
+        svg += `<text x="${(profile.qty_start_x_mm - 5.5).toFixed(1)}" y="${(qtyY + 1.6).toFixed(1)}" font-size="1.7" fill="#64748b" font-family="Arial, sans-serif">Qtd</text>`;
+
+        // Caixinhas de quantidade (6..15)
+        for (let q = 6; q <= 15; q++) {
+          const qx = profile.qty_start_x_mm + (q - 6) * profile.qty_step_x_mm;
+          svg += `<rect x="${qx.toFixed(2)}" y="${qtyY.toFixed(2)}" width="${profile.mark_w_mm}" height="${profile.mark_h_mm}" fill="none" stroke="#cbd5e1" stroke-width="0.2" rx="0.2"/>`;
+          svg += `<text x="${(qx + profile.mark_w_mm / 2).toFixed(2)}" y="${(qtyY + 1.55).toFixed(2)}" font-size="1.5" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif">${q}</text>`;
+        }
+
+        // Moldura suave do volante (60 dezenas)
+        svg += `<rect x="${(profile.offset_x_mm - 1.2).toFixed(2)}" y="${(profile.offset_y_mm + offsetY - 1.2).toFixed(2)}" width="${gridW.toFixed(2)}" height="${gridH.toFixed(2)}" rx="1" fill="#f0fdf4" fill-opacity="0.45" stroke="#bbf7d0" stroke-width="0.3"/>`;
+
+        // 60 dezenas guia (01..60)
+        for (let n = 1; n <= 60; n++) {
+          const col = (n - 1) % 10;
+          const row = Math.floor((n - 1) / 10);
+          const nx = profile.offset_x_mm + col * profile.col_step_mm;
+          const ny = profile.offset_y_mm + offsetY + row * profile.row_step_mm;
+          const label = String(n).padStart(2, '0');
+          svg += `<rect x="${nx.toFixed(2)}" y="${ny.toFixed(2)}" width="${profile.mark_w_mm}" height="${profile.mark_h_mm}" fill="#ffffff" stroke="#cbd5e1" stroke-width="0.18" rx="0.2"/>`;
+          svg += `<text x="${(nx + profile.mark_w_mm / 2).toFixed(2)}" y="${(ny + 1.55).toFixed(2)}" font-size="1.55" text-anchor="middle" fill="#64748b" font-family="Arial, sans-serif">${label}</text>`;
+        }
+        svg += `</g>`;
+      });
+
+      // Legenda dimensional discreta no rodapé da prévia
+      svg += `<text x="${(w / 2).toFixed(1)}" y="${(h - 3).toFixed(1)}" font-size="2" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif">Volante Caixa ${w} × ${h} mm (Escala 1:1 na impressão)</text>`;
+    }
+
+    // Marcas ópticas pretas reais (retângulos preenchidos em preto puro #000000)
     slip.marks.forEach((m) => {
       svg += `<rect x="${m.x_mm}" y="${m.y_mm}" width="${m.w_mm}" height="${m.h_mm}" fill="#000000" rx="0.2"/>`;
     });
@@ -170,20 +236,19 @@ const PrinterService = (() => {
     return svg;
   }
 
-  // Gera o layout de página de impressão com 3 volantes por folha A4
+  // Gera o layout de página de impressão A4 Paisagem com até 3 volantes por folha (100% limpo p/ leitora)
   function renderPrintArea(slipsPayload) {
     const prof = slipsPayload.profile;
     const slips = slipsPayload.slips;
     let html = '';
 
-    // Agrupa de 3 em 3 volantes por página A4
     for (let p = 0; p < slips.length; p += 3) {
       const pageSlips = slips.slice(p, p + 3);
       html += `<div class="slip-page a4-grid-page">`;
       html += `<div class="a4-slips-row">`;
       pageSlips.forEach((s) => {
         html += `<div class="slip-card">`;
-        html += renderSlipSvg(s, prof, true);
+        html += renderSlipSvg(s, prof, { showOutline: true, isPreview: false });
         html += `</div>`;
       });
       html += `</div>`;
@@ -196,12 +261,13 @@ const PrinterService = (() => {
   return {
     getProfile,
     saveProfile,
+    resetProfile,
     buildSlipsPayload,
+    buildAlignmentTestPayload,
     renderSlipSvg,
     renderPrintArea,
     DEFAULT_PROFILE,
   };
 })();
 
-// Export global
 window.PrinterService = PrinterService;

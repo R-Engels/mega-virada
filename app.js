@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.22 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.23 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -903,20 +903,83 @@ function buildSlipsPreview() {
   });
   state.slipsPayload = payload;
 
-  let html = `<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">`;
+  let html = '';
   payload.slips.forEach((s) => {
     html += `
-      <div style="background:#fff;padding:10px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.3);max-width:340px;">
-        <div style="font-size:12px;color:#0f172a;margin-bottom:6px;font-weight:700;display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:4px;">
+      <div class="slip-preview-card">
+        <div class="slip-preview-header">
           <span>Volante #${s.slip_index} de ${payload.total_slips}</span>
-          <span style="font-size:10px;color:#64748b;font-weight:normal;">${s.total_jogos} jogo(s)</span>
+          <span class="slip-preview-meta">${s.total_jogos} jogo${s.total_jogos > 1 ? 's' : ''}</span>
         </div>
-        ${PrinterService.renderSlipSvg(s, payload.profile, true)}
+        ${PrinterService.renderSlipSvg(s, payload.profile, { showOutline: true, isPreview: true })}
       </div>
     `;
   });
-  html += `</div>`;
   el.innerHTML = html;
+}
+
+function loadCalibrationInputs() {
+  const p = PrinterService.getProfile();
+  const setVal = (id, v) => { const el = $(id); if (el) el.value = v; };
+  setVal('#cal-offset-x', p.offset_x_mm);
+  setVal('#cal-offset-y', p.offset_y_mm);
+  setVal('#cal-col-step', p.col_step_mm);
+  setVal('#cal-row-step', p.row_step_mm);
+  setVal('#cal-mark-w', p.mark_w_mm);
+  setVal('#cal-mark-h', p.mark_h_mm);
+  setVal('#cal-g2', p.game_offsets?.[1] ?? 48.0);
+  setVal('#cal-g3', p.game_offsets?.[2] ?? 96.0);
+  setVal('#cal-qty-y', p.qty_offset_y_mm);
+  setVal('#cal-qty-x', p.qty_start_x_mm);
+  setVal('#cal-qty-step', p.qty_step_x_mm);
+  setVal('#cal-size', `${p.volante_w_mm}x${p.volante_h_mm}`);
+}
+
+function saveCalibrationInputs() {
+  const p = PrinterService.getProfile();
+  const numVal = (id, fallback) => {
+    const v = parseFloat($(id)?.value);
+    return Number.isFinite(v) ? v : fallback;
+  };
+  p.offset_x_mm = numVal('#cal-offset-x', p.offset_x_mm);
+  p.offset_y_mm = numVal('#cal-offset-y', p.offset_y_mm);
+  p.col_step_mm = numVal('#cal-col-step', p.col_step_mm);
+  p.row_step_mm = numVal('#cal-row-step', p.row_step_mm);
+  p.mark_w_mm = numVal('#cal-mark-w', p.mark_w_mm);
+  p.mark_h_mm = numVal('#cal-mark-h', p.mark_h_mm);
+  p.game_offsets = [0, numVal('#cal-g2', 48.0), numVal('#cal-g3', 96.0)];
+  p.qty_offset_y_mm = numVal('#cal-qty-y', p.qty_offset_y_mm);
+  p.qty_start_x_mm = numVal('#cal-qty-x', p.qty_start_x_mm);
+  p.qty_step_x_mm = numVal('#cal-qty-step', p.qty_step_x_mm);
+
+  const sizeRaw = ($('#cal-size')?.value || '').toLowerCase().split('x');
+  if (sizeRaw.length === 2) {
+    const w = parseFloat(sizeRaw[0]);
+    const h = parseFloat(sizeRaw[1]);
+    if (w > 40 && h > 80) {
+      p.volante_w_mm = w;
+      p.volante_h_mm = h;
+    }
+  }
+  PrinterService.saveProfile(p);
+  buildSlipsPreview();
+  toast('Calibração milimétrica salva.');
+}
+
+function resetCalibrationInputs() {
+  PrinterService.resetProfile();
+  loadCalibrationInputs();
+  buildSlipsPreview();
+  toast('Calibração restaurada para o padrão oficial Caixa (83×185mm).');
+}
+
+function printAlignmentTest() {
+  const printArea = $('#print-area');
+  if (!printArea) return;
+  const payload = PrinterService.buildAlignmentTestPayload(PrinterService.getProfile());
+  setPrintOrientation('landscape');
+  printArea.innerHTML = PrinterService.renderPrintArea(payload);
+  window.print();
 }
 
 function setPrintOrientation(mode) {
@@ -1367,8 +1430,12 @@ function bindEvents() {
   });
 
   // Impressão
+  loadCalibrationInputs();
   $('#btn-build-slips')?.addEventListener('click', buildSlipsPreview);
   $('#btn-print-slips')?.addEventListener('click', printSlips);
+  $('#btn-print-test')?.addEventListener('click', printAlignmentTest);
+  $('#btn-save-profile')?.addEventListener('click', saveCalibrationInputs);
+  $('#btn-reset-profile')?.addEventListener('click', resetCalibrationInputs);
   $('#print-teimosinha')?.addEventListener('change', buildSlipsPreview);
   $('#btn-print-bolao-list')?.addEventListener('click', imprimirListaJogos);
   $('#btn-print-jogos-list')?.addEventListener('click', imprimirListaJogos);

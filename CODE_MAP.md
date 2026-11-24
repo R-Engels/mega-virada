@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.22 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.23 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -43,12 +43,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_T/             # Backup imutável V. 2.20
 ├── Backup_Versao_U/             # Backup imutável V. 2.21
 ├── Backup_Versao_V/             # Backup imutável V. 2.22
+├── Backup_Versao_W/             # Backup imutável V. 2.23
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.22)
+## Fluxos de Operação (V. 2.23)
 
-1. **Alerta Visual de Cotas Incompletas e Recálculo Automático ao Excluir Jogos**:
+1. **Reestruturação da Página de Impressão Óptica (Scanner Caixa 83×185mm)**:
+   - Prévia visual responsiva (`.slips-preview-wrap` em grid sem corte vertical/scroll interno) exibindo grade guia Caixa (`01..60`, `JOGO 1..3`, `Qtd 6..15`) sob as marcas ópticas pretas para conferência visual instantânea.
+   - Impressão real A4 Paisagem (`@media print`) 100% limpa na zona óptica (somente cabeçalho no topo e marcas `#000000`), com `height: 208mm` e `gap: 6mm` (261mm totais em 297mm) eliminando cortes de margem e páginas em branco extras.
+   - Botões **Teste de Alinhamento**, **Salvar Calibração** e **Restaurar Padrão Caixa** + 12 campos milimétricos totalmente funcionais em `app.js` e `printer_service.js`.
+   - Atualização de cache-buster `styles.css?v=2.23` no `index.html` (estava preso em `v=2.08`).
+2. **Alerta Visual de Cotas Incompletas e Recálculo Automático ao Excluir Jogos**:
    - Identificação visual imediata de discrepâncias entre cotas e jogos cadastrados (ex: 2 cotas = 8 jogos meta, mas apenas 4 cadastrados).
    - Na tabela de Participantes: linha destacada com fundo vermelho suave e borda vermelha lateral (`.row-cota-alerta`), badge `FALTAM X JOGO(S)` junto ao nome, controle de cotas com aviso `⚠️ X cota(s) (Y/Z)` e badge "Jogos / Meta" pulsante.
    - No cartão de cota do participante (`#part-quota-box`): banner de aviso explícito `⚠️ Cota Incompleta: X cotas (Y jogos). Faltam Z jogos!`.

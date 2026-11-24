@@ -496,9 +496,45 @@ th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background
 .dup-row { background: rgba(239, 68, 68, 0.12); }
 
 .slips-preview-wrap {
-  display: flex; flex-wrap: wrap; gap: 14px;
-  max-height: 620px; overflow: auto; padding: 8px;
-  background: #0b1120; border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  margin-top: 14px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  align-items: start;
+}
+.slip-preview-card {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.slip-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+.slip-preview-header .slip-preview-meta {
+  font-size: 11px;
+  font-weight: 600;
+  color: #059669;
+  background: #ecfdf5;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid #a7f3d0;
 }
 .slip-card {
   background: #fff; color: #000;
@@ -783,11 +819,11 @@ tr.row-cota-alerta {
   /* Impressão dos Volantes Ópticos em Folha A4 Paisagem (Até 3 volantes por folha) */
   .slip-page {
     width: 297mm !important;
-    height: 210mm !important;
-    max-height: 210mm !important;
+    height: 208mm !important;
+    max-height: 208mm !important;
     box-sizing: border-box !important;
     margin: 0 !important;
-    padding: 10mm 12mm !important;
+    padding: 6mm 8mm !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
@@ -802,7 +838,7 @@ tr.row-cota-alerta {
     break-after: auto !important;
   }
   .a4-grid-page {
-    padding: 8mm 12mm !important;
+    padding: 6mm 8mm !important;
   }
   .a4-slips-row {
     display: flex !important;
@@ -810,7 +846,7 @@ tr.row-cota-alerta {
     flex-wrap: nowrap !important;
     justify-content: center !important;
     align-items: center !important;
-    gap: 8mm !important;
+    gap: 6mm !important;
     width: 100% !important;
     height: 100% !important;
   }
@@ -822,7 +858,7 @@ tr.row-cota-alerta {
     box-sizing: border-box !important;
     flex: 0 0 83mm !important;
     flex-shrink: 0 !important;
-    border: 1px dashed #94a3b8 !important;
+    border: none !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
@@ -945,41 +981,30 @@ tr.row-cota-alerta {
   border: 1px solid #334155;
 }
 
-.print-opt-strip {
+.print-toolbar {
   display: flex;
-  align-items: center;
-  gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   padding: 10px 12px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 8px;
 }
-.a4-landscape-page {
-  width: 297mm;
-  height: 210mm;
-  box-sizing: border-box;
-  padding: 10mm 15mm;
-  margin: 0 auto;
+.print-toolbar-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
 }
-.a4-slips-trio {
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  gap: 8mm;
-}
-.slip-card-print {
-  width: 83mm;
-  height: 185mm;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.print-spec-pill {
+  font-size: 11.5px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 5px 10px;
+  border-radius: 6px;
 }
 
 /* Modal e Responsividade Mobile */
