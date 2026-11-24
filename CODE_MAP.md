@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.12 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.13 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -33,12 +33,15 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_J/             # Backup imutável V. 2.10
 │   ├── Backup_Versao_K/             # Backup imutável V. 2.11
 │   ├── Backup_Versao_L/             # Backup imutável V. 2.12
+│   ├── Backup_Versao_M/             # Backup imutável V. 2.13
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.12)
+## Fluxos de Operação (V. 2.13)
 
-1. **Remoção dos Botões de Backup/Restaurar JSON**:
+1. **Remoção da Legenda Redundante do Mapa de Calor**:
+   - Removido o badge "Modelo Volante Caixa Oficial (Dividido em 4 Quadrantes) · Escala Excel" do cabeçalho da seção de estatísticas, deixando a interface mais limpa.
+2. **Remoção dos Botões de Backup/Restaurar JSON**:
    - Eliminados os botões manuais de Backup JSON e Restaurar JSON da interface, garantindo integridade e dependência exclusiva da nuvem Firebase 24h em tempo real.
 2. **Alternância de Tema Claro e Escuro (Light/Dark Mode)**:
    - Botão seletor no topo da janela (`#btn-theme-toggle`) para alternar instantaneamente entre tema escuro padrão e tema claro de alta visibilidade.
