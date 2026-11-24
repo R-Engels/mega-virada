@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.14 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.16 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -222,26 +222,39 @@ function renderKpis(b) {
   if (!el || !b) return;
   const parts = b.participantes || [];
   const apostas = b.apostas || [];
-  const pagos = parts.filter((p) => p.pago).length;
   const totalCotas = parts.reduce((acc, p) => acc + (p.cotas || 1), 0);
-  const totalArrecadado = totalCotas * (b.valor_cota || 24.0);
+  const cotasPagas = parts.filter((p) => p.pago).reduce((acc, p) => acc + (p.cotas || 1), 0);
+  const cotasPendentes = Math.max(0, totalCotas - cotasPagas);
+  const pagos = parts.filter((p) => p.pago).length;
+  const pendentes = parts.length - pagos;
+
+  const valorCota = Number(b.valor_cota || 24.0);
+  const arrecadacaoTotal = totalCotas * valorCota;
+  const valorPago = cotasPagas * valorCota;
+  const valorPendente = cotasPendentes * valorCota;
+  const pctPago = arrecadacaoTotal > 0 ? Math.round((valorPago / arrecadacaoTotal) * 100) : 0;
+  const metaJogos = totalCotas * (b.jogos_por_cota || 4);
 
   el.innerHTML = `
     <div class="kpi">
       <div class="label">Total de Jogos</div>
       <div class="value">${apostas.length}</div>
+      <div class="sub-label">Meta: ${metaJogos} jogos (${totalCotas} cotas)</div>
     </div>
     <div class="kpi">
-      <div class="label">Participantes (${pagos} Pagos)</div>
+      <div class="label">Participantes</div>
       <div class="value">${parts.length}</div>
+      <div class="sub-label">${pagos} pago${pagos !== 1 ? 's' : ''} · ${pendentes} pendente${pendentes !== 1 ? 's' : ''}</div>
     </div>
     <div class="kpi">
-      <div class="label">Total de Cotas</div>
-      <div class="value">${totalCotas}</div>
+      <div class="label">Total Pago (Recebido)</div>
+      <div class="value" style="color:var(--accent)">R$ ${valorPago.toFixed(2)}</div>
+      <div class="sub-label">${pctPago}% do total (R$ ${arrecadacaoTotal.toFixed(2)})</div>
     </div>
     <div class="kpi">
-      <div class="label">Arrecadação Estimada</div>
-      <div class="value">R$ ${totalArrecadado.toFixed(2)}</div>
+      <div class="label">Valor Faltante (Pendente)</div>
+      <div class="value" style="color:${valorPendente > 0 ? 'var(--warn)' : 'var(--accent)'}">R$ ${valorPendente.toFixed(2)}</div>
+      <div class="sub-label">${valorPendente > 0 ? `⚠️ Falta receber ${cotasPendentes} cota${cotasPendentes > 1 ? 's' : ''}` : '✅ 100% Quitado'}</div>
     </div>
   `;
 }

@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.15 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.16 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -36,12 +36,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_M/             # Backup imutável V. 2.13
 │   ├── Backup_Versao_N/             # Backup imutável V. 2.14
 │   ├── Backup_Versao_O/             # Backup imutável V. 2.15
+│   ├── Backup_Versao_P/             # Backup imutável V. 2.16
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.15)
+## Fluxos de Operação (V. 2.16)
 
-1. **Navegação Rápida entre Concursos (Setas e Teclado)**:
+1. **Reestruturação de KPIs Financeiros e Término de Redundância**:
+   - Removido o indicador redundante de "Total de Cotas" e renomeado o valor matemático da arrecadação.
+   - Inclusão dos cartões de "Total Pago (Recebido)" e "Valor Faltante (Pendente)" com alertas claros de cotas a receber.
+2. **Compactação da Lista Impressa de Jogos (4 Colunas A4)**:
+   - Redução dos cartões de jogos e dezenas para 4 colunas em tamanho reduzido (19px/bolas), multiplicando a capacidade de jogos por folha impressa.
+3. **Navegação Rápida entre Concursos (Setas e Teclado)**:
    - Botões "◀ Anterior" e "Próximo ▶" integrados na barra de conferência para alternar instantaneamente entre os 3.087 concursos históricos.
    - Suporte a atalhos de teclado globais (Seta Esquerda `←` e Seta Direita `→`) para conferir sorteios sem necessidade de cliques.
 2. **Impressão da Lista de Jogos Formatada em 3 Colunas**:
