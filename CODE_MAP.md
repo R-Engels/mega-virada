@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.18 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.19 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -39,12 +39,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_P/             # Backup imutável V. 2.16
 │   ├── Backup_Versao_Q/             # Backup imutável V. 2.17
 │   ├── Backup_Versao_R/             # Backup imutável V. 2.18
+│   ├── Backup_Versao_S/             # Backup imutável V. 2.19
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.18)
+## Fluxos de Operação (V. 2.19)
 
-1. **Correção do Layout de Impressão de Volantes (3 por Folha A4 Paisagem)**:
+1. **Cabeçalho Exclusivo e Área Óptica Limpa nos Volantes**:
+   - Dados de participante e dezenas centralizados estritamente no topo/cabeçalho de cada volante (`1: NOME:  dezenas`, `2: NOME:  dezenas`, `3: NOME:  dezenas`), sem nenhuma marcação de texto intermediária ou rodapé na grade.
+   - Preservação absoluta das zonas de leitura dos sensores ópticos da leitora da Caixa, evitando rejeições ou ruídos na passagem mecânica do volante.
+2. **Correção do Layout de Impressão de Volantes (3 por Folha A4 Paisagem)**:
    - Configuração formal de orientação Paisagem (@page size: A4 landscape) na impressão de volantes, eliminando quebra prematura de página.
    - Bloqueio de quebra de linha (flex-wrap: nowrap) na linha de volantes (.a4-slips-row) e fixação dimensional exata de cada volante (83x185mm) com page-break-inside: avoid.
    - Os 3 volantes (9 jogos) são impressos lado a lado em uma única folha A4 paisagem, com margens e espaçamento centralizado (265mm totais em 297mm de largura).
