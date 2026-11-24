@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.23 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.24 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -44,12 +44,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_U/             # Backup imutável V. 2.21
 ├── Backup_Versao_V/             # Backup imutável V. 2.22
 ├── Backup_Versao_W/             # Backup imutável V. 2.23
+├── Backup_Versao_X/             # Backup imutável V. 2.24
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.23)
+## Fluxos de Operação (V. 2.24)
 
-1. **Reestruturação da Página de Impressão Óptica (Scanner Caixa 83×185mm)**:
+1. **Remoção do Vazamento da Barra `.topbar` na Impressão**:
+   - Restrição da regra responsiva `@media screen and (max-width: 900px)` apenas para tela (`screen`), impedindo que `.topbar { display: flex !important; }` sobrescreva `.no-print` durante a impressão A4.
+   - Bloco final `@media print` em `styles.css` garantindo ocultação absoluta de `.topbar`, `main.container`, `.no-print`, modais e toasts em todas as páginas impressas.
+2. **Reestruturação da Página de Impressão Óptica (Scanner Caixa 83×185mm)**:
    - Prévia visual responsiva (`.slips-preview-wrap` em grid sem corte vertical/scroll interno) exibindo grade guia Caixa (`01..60`, `JOGO 1..3`, `Qtd 6..15`) sob as marcas ópticas pretas para conferência visual instantânea.
    - Impressão real A4 Paisagem (`@media print`) 100% limpa na zona óptica (somente cabeçalho no topo e marcas `#000000`), com `height: 208mm` e `gap: 6mm` (261mm totais em 297mm) eliminando cortes de margem e páginas em branco extras.
    - Botões **Teste de Alinhamento**, **Salvar Calibração** e **Restaurar Padrão Caixa** + 12 campos milimétricos totalmente funcionais em `app.js` e `printer_service.js`.

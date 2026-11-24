@@ -1096,7 +1096,7 @@ tr.row-cota-alerta {
   padding: 4px 6px;
 }
 
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
   .grid-2 { grid-template-columns: 1fr !important; }
   .grid-4 { grid-template-columns: 1fr 1fr !important; }
 
@@ -1275,5 +1275,20 @@ tr.row-cota-alerta {
 
 [data-theme="light"] .slips-preview-wrap {
   background: #e2e8f0;
+}
+
+/* Garantia final de ocultação de toda a interface na impressão */
+@media print {
+  header.topbar,
+  .topbar,
+  main.container,
+  .no-print,
+  .modal-overlay,
+  #toast {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
 }
 
