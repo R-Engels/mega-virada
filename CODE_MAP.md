@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.14 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.15 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -35,12 +35,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_L/             # Backup imutável V. 2.12
 │   ├── Backup_Versao_M/             # Backup imutável V. 2.13
 │   ├── Backup_Versao_N/             # Backup imutável V. 2.14
+│   ├── Backup_Versao_O/             # Backup imutável V. 2.15
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.14)
+## Fluxos de Operação (V. 2.15)
 
-1. **Impressão da Lista de Jogos Formatada em 3 Colunas**:
+1. **Navegação Rápida entre Concursos (Setas e Teclado)**:
+   - Botões "◀ Anterior" e "Próximo ▶" integrados na barra de conferência para alternar instantaneamente entre os 3.087 concursos históricos.
+   - Suporte a atalhos de teclado globais (Seta Esquerda `←` e Seta Direita `→`) para conferir sorteios sem necessidade de cliques.
+2. **Impressão da Lista de Jogos Formatada em 3 Colunas**:
    - Substituído o botão Exportar TXT por "🖨️ Imprimir Lista de Jogos", gerando folha A4 oficial com cabeçalho do bolão e cartões de jogos distribuídos em 3 colunas organizadas.
 2. **Confirmação ao Excluir Jogos**:
    - Adicionado diálogo de confirmação `confirm(...)` com identificação do participante e dezenas antes de apagar qualquer aposta.

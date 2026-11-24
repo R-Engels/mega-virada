@@ -12,7 +12,7 @@
     <div class="brand">
       <span class="logo-dot">MS</span>
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.14 (Nuvem 24h)</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.15 (Nuvem 24h)</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -152,9 +152,15 @@
             <strong style="font-size:13px">Conferência Visual Direta no Registro de Jogos</strong>
             <span id="conf-status-tag" class="badge">Nenhum concurso ativo</span>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+            <button id="btn-conf-prev" class="btn btn-ghost" title="Concurso Anterior (← Tecla Seta Esquerda)" style="font-size:12px;padding:6px 10px;font-weight:700">
+              ◀ Anterior
+            </button>
             <button id="btn-quick-conf-ultimo" class="btn btn-primary" style="font-size:12px;padding:6px 12px">
-              ⚡ Conferir Último Concurso Oficial Caixa
+              ⚡ Último Concurso Caixa
+            </button>
+            <button id="btn-conf-next" class="btn btn-ghost" title="Próximo Concurso (→ Tecla Seta Direita)" style="font-size:12px;padding:6px 10px;font-weight:700">
+              Próximo ▶
             </button>
             <button id="btn-clear-conf" class="btn btn-ghost" style="font-size:12px;padding:6px 10px;display:none">
               ✕ Limpar Conferência
@@ -299,10 +305,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.14 -->
-  <script src="stats_engine.js?v=2.14"></script>
-  <script src="printer_service.js?v=2.14"></script>
-  <script src="firebase_sync.js?v=2.14"></script>
-  <script src="app.js?v=2.14"></script>
+  <!-- Módulos da Aplicação V. 2.15 -->
+  <script src="stats_engine.js?v=2.15"></script>
+  <script src="printer_service.js?v=2.15"></script>
+  <script src="firebase_sync.js?v=2.15"></script>
+  <script src="app.js?v=2.15"></script>
 </body>
 </html>

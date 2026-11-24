@@ -14,6 +14,7 @@ const state = {
   currentProfile: null,
   slipsPayload: null,
   confResultado: null,
+  currentConcursoIndex: null,
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -1010,6 +1011,29 @@ function limparConferenciaVisual() {
   toast('Conferência do bolão resetada.');
 }
 
+function navegarConcurso(delta) {
+  if (!state.concursos || !state.concursos.length) {
+    toast('Nenhum concurso histórico carregado.', true);
+    return;
+  }
+  if (state.currentConcursoIndex === null || state.currentConcursoIndex === undefined) {
+    state.currentConcursoIndex = state.concursos.length - 1;
+  } else {
+    state.currentConcursoIndex += delta;
+    if (state.currentConcursoIndex < 0) {
+      state.currentConcursoIndex = 0;
+      toast('Primeiro concurso da história (#1) atingido.');
+    } else if (state.currentConcursoIndex >= state.concursos.length) {
+      state.currentConcursoIndex = state.concursos.length - 1;
+      toast('Último concurso oficial Caixa atingido.');
+    }
+  }
+
+  const c = state.concursos[state.currentConcursoIndex];
+  if (!c) return;
+  executarConferenciaVisual(c.dezenas, `${c.concurso} (${c.data})`);
+}
+
 function abrirModalConferencia() {
   const modal = $('#conferir-modal');
   if (!modal) return;
@@ -1270,12 +1294,29 @@ function bindEvents() {
   $('#btn-print-jogos-list')?.addEventListener('click', imprimirListaJogos);
 
   // Conferência Visual Direta no Registro
+  $('#btn-conf-prev')?.addEventListener('click', () => navegarConcurso(-1));
+  $('#btn-conf-next')?.addEventListener('click', () => navegarConcurso(1));
   $('#btn-quick-conf-ultimo')?.addEventListener('click', () => {
     if (state.concursos && state.concursos.length) {
-      const ultimo = state.concursos[state.concursos.length - 1];
-      executarConferenciaVisual(ultimo.dezenas, ultimo.concurso);
+      state.currentConcursoIndex = state.concursos.length - 1;
+      const ultimo = state.concursos[state.currentConcursoIndex];
+      executarConferenciaVisual(ultimo.dezenas, `${ultimo.concurso} (${ultimo.data})`);
     } else {
       toast('Nenhum concurso histórico carregado.', true);
+    }
+  });
+
+  // Atalhos de teclado: setas para esquerda e direita para mudar de concurso rapidamente
+  document.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+      return;
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navegarConcurso(-1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      navegarConcurso(1);
     }
   });
 
