@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.21 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.22 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -9,12 +9,12 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 
 ```text
 04 - Mega da Virada Potenza/
-├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.08)
-├── styles.css                   # Estilos responsivos (Header Fixo, 4 Quadrantes, Heatmap, Conferência)
-├── app.js                       # Controlador principal e eventos da interface (V. 2.08)
+├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.22)
+├── styles.css                   # Estilos responsivos (Header Fixo, 4 Quadrantes, Heatmap, Alertas de Cotas)
+├── app.js                       # Controlador principal e eventos da interface (V. 2.22)
 ├── stats_engine.js              # Motor matemático e sorteador com regra recomendada em JS
-├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG
-├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage (V. 2.08)
+├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG (V. 2.22)
+├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage (V. 2.22)
 ├── data/
 │   ├── concursos.json           # Base histórica compactada dos 3.087 concursos
 │   └── initial_state.json       # Estado inicial do Bolão Potenza e catálogo de nomes
@@ -29,25 +29,33 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_F/             # Backup imutável V. 2.06
 ├── Backup_Versao_G/             # Backup imutável V. 2.07
 ├── Backup_Versao_H/             # Backup imutável V. 2.08
-│   ├── Backup_Versao_I/             # Backup imutável V. 2.09
-│   ├── Backup_Versao_J/             # Backup imutável V. 2.10
-│   ├── Backup_Versao_K/             # Backup imutável V. 2.11
-│   ├── Backup_Versao_L/             # Backup imutável V. 2.12
-│   ├── Backup_Versao_M/             # Backup imutável V. 2.13
-│   ├── Backup_Versao_N/             # Backup imutável V. 2.14
-│   ├── Backup_Versao_O/             # Backup imutável V. 2.15
-│   ├── Backup_Versao_P/             # Backup imutável V. 2.16
-│   ├── Backup_Versao_Q/             # Backup imutável V. 2.17
-│   ├── Backup_Versao_R/             # Backup imutável V. 2.18
-│   ├── Backup_Versao_S/             # Backup imutável V. 2.19
-│   ├── Backup_Versao_T/             # Backup imutável V. 2.20
-│   ├── Backup_Versao_U/             # Backup imutável V. 2.21
+├── Backup_Versao_I/             # Backup imutável V. 2.09
+├── Backup_Versao_J/             # Backup imutável V. 2.10
+├── Backup_Versao_K/             # Backup imutável V. 2.11
+├── Backup_Versao_L/             # Backup imutável V. 2.12
+├── Backup_Versao_M/             # Backup imutável V. 2.13
+├── Backup_Versao_N/             # Backup imutável V. 2.14
+├── Backup_Versao_O/             # Backup imutável V. 2.15
+├── Backup_Versao_P/             # Backup imutável V. 2.16
+├── Backup_Versao_Q/             # Backup imutável V. 2.17
+├── Backup_Versao_R/             # Backup imutável V. 2.18
+├── Backup_Versao_S/             # Backup imutável V. 2.19
+├── Backup_Versao_T/             # Backup imutável V. 2.20
+├── Backup_Versao_U/             # Backup imutável V. 2.21
+├── Backup_Versao_V/             # Backup imutável V. 2.22
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.21)
+## Fluxos de Operação (V. 2.22)
 
-1. **Cabeçalho Limpo e Barra de Atalhos Fixa no Celular**:
+1. **Alerta Visual de Cotas Incompletas e Recálculo Automático ao Excluir Jogos**:
+   - Identificação visual imediata de discrepâncias entre cotas e jogos cadastrados (ex: 2 cotas = 8 jogos meta, mas apenas 4 cadastrados).
+   - Na tabela de Participantes: linha destacada com fundo vermelho suave e borda vermelha lateral (`.row-cota-alerta`), badge `FALTAM X JOGO(S)` junto ao nome, controle de cotas com aviso `⚠️ X cota(s) (Y/Z)` e badge "Jogos / Meta" pulsante.
+   - No cartão de cota do participante (`#part-quota-box`): banner de aviso explícito `⚠️ Cota Incompleta: X cotas (Y jogos). Faltam Z jogos!`.
+   - No KPI "Total de Jogos": alerta com borda vermelha e contagem de jogos faltantes no bolão.
+   - Na impressão de volantes (`printSlips()`): confirmação de segurança impedindo impressão acidental com cotas incompletas.
+   - Na exclusão de jogos (`excluirAposta()`): cálculo automático de cotas restantes (`novasCotas = Math.max(1, Math.ceil(remainingJogos / jogosPorCota))`). Se jogos forem excluídos (ex: 4 jogos excluídos de quem tinha 2 cotas e 8 jogos, caindo para 4 jogos), a cota é reduzida automaticamente para 1 cota, recalculando os valores financeiros e cotas do bolão.
+2. **Cabeçalho Limpo e Barra de Atalhos Fixa no Celular**:
    - Remoção do ícone 'MS' e do texto redundante '(Nuvem 24h)' do cabeçalho superior.
    - Indicador de sincronização em nuvem reduzido exclusivamente à bolinha verde ('🟢'), mantendo tooltip detalhado.
    - Adicionado botão de atalho dedicado 'Registrar & Sortear' na barra superior para acesso direto à grade de marcação de apostas e sorteios.

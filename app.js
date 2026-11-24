@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.21 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.22 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -170,7 +170,11 @@ function updateActionButtonsState(st) {
 
   if (quotaBox) {
     quotaBox.style.display = 'block';
+    const alertTag = st.cotas > 1 && st.restantes > 0
+      ? `<span class="quota-tag alerta-incompleto">⚠️ Cota Incompleta: ${st.cotas} cotas (${st.maxJogos} jogos). Faltam ${st.restantes} jogos!</span>`
+      : '';
     quotaBox.innerHTML = `
+      ${alertTag}
       <span class="quota-tag active">Preenchendo Jogo <b>${st.proximoJogoIndex} de ${st.maxJogos}</b></span>
       <span class="quota-tag">Restam ${st.restantes} jogo${st.restantes > 1 ? 's' : ''}</span>
       <span class="quota-tag">${pLabel}</span>
@@ -234,12 +238,16 @@ function renderKpis(b) {
   const valorPendente = cotasPendentes * valorCota;
   const pctPago = arrecadacaoTotal > 0 ? Math.round((valorPago / arrecadacaoTotal) * 100) : 0;
   const metaJogos = totalCotas * (b.jogos_por_cota || 4);
+  const totalJogos = apostas.length;
+  const jogosFaltantes = Math.max(0, metaJogos - totalJogos);
 
   el.innerHTML = `
-    <div class="kpi">
+    <div class="kpi ${jogosFaltantes > 0 ? 'kpi-alerta' : ''}">
       <div class="label">Total de Jogos</div>
-      <div class="value">${apostas.length}</div>
-      <div class="sub-label">Meta: ${metaJogos} jogos (${totalCotas} cotas)</div>
+      <div class="value ${jogosFaltantes > 0 ? 'text-warn' : ''}">${totalJogos}</div>
+      <div class="sub-label ${jogosFaltantes > 0 ? 'text-danger font-bold' : ''}">
+        ${jogosFaltantes > 0 ? `⚠️ Faltam ${jogosFaltantes} jogos (${totalCotas} cotas)` : `Meta: ${metaJogos} jogos (${totalCotas} cotas)`}
+      </div>
     </div>
     <div class="kpi">
       <div class="label">Participantes</div>
@@ -279,16 +287,21 @@ function renderParticipantesTable(b) {
       const isPago = !!p.pago;
       const isMetaOk = pJogos >= meta;
       const faltam = meta - pJogos;
+      const rowClass = !isMetaOk ? 'row-cota-alerta' : '';
 
       return `
-        <tr>
-          <td><b>${p.nome}</b></td>
+        <tr class="${rowClass}">
+          <td>
+            <b>${p.nome}</b>
+            ${!isMetaOk ? `<span class="badge-incompleto-tag" title="Atenção: faltam ${faltam} jogo(s) para completar as ${p.cotas} cotas!">FALTAM ${faltam} JOGO(S)</span>` : ''}
+          </td>
           <td style="text-align:center">
-            <div class="cotas-control">
+            <div class="cotas-control ${!isMetaOk ? 'alerta' : ''}" title="${!isMetaOk ? `Atenção: ${p.cotas} cota(s) exigem ${meta} jogos, mas há apenas ${pJogos} cadastrado(s)!` : ''}">
               <button class="btn-cota" onclick="alterarCotas(${p.id}, -1)">-</button>
-              <span class="cota-val">${p.cotas || 1}</span>
+              <span class="cota-val ${!isMetaOk ? 'cota-val-alerta' : ''}">${p.cotas || 1}</span>
               <button class="btn-cota" onclick="alterarCotas(${p.id}, 1)">+</button>
             </div>
+            ${!isMetaOk ? `<div class="cota-aviso-txt">⚠️ ${p.cotas} cota${p.cotas > 1 ? 's' : ''} (${pJogos}/${meta})</div>` : ''}
           </td>
           <td style="text-align:center">
             ${isMetaOk
@@ -620,9 +633,24 @@ window.excluirAposta = function (apostaId) {
     return;
   }
   b.apostas = (b.apostas || []).filter((a) => a.id !== apostaId);
+
+  // Recálculo automático de cotas se jogos forem reduzidos
+  const jogosPorCota = Math.max(1, parseInt(b.jogos_por_cota, 10) || 4);
+  const p = (b.participantes || []).find((x) => (x.nome || '').toUpperCase() === partNome.toUpperCase());
+  let msgCota = '';
+  if (p && p.cotas > 1) {
+    const remainingJogos = b.apostas.filter((a) => (a.participante_nome || '').toUpperCase() === partNome.toUpperCase()).length;
+    const novasCotas = Math.max(1, Math.ceil(remainingJogos / jogosPorCota));
+    if (novasCotas < p.cotas) {
+      const antigasCotas = p.cotas;
+      p.cotas = novasCotas;
+      msgCota = ` Com a exclusão, restaram ${remainingJogos} jogos e a cota de ${p.nome} foi recalculada de ${antigasCotas} para ${p.cotas}.`;
+    }
+  }
+
   persistAndBroadcast();
   renderAll();
-  toast('Aposta removida.');
+  toast(`Aposta removida.${msgCota}`);
 };
 
 // Adicionar aposta manual
@@ -906,6 +934,18 @@ function setPrintOrientation(mode) {
 }
 
 function printSlips() {
+  const b = getCurrentBolao();
+  if (b) {
+    const totalCotas = (b.participantes || []).reduce((acc, p) => acc + (p.cotas || 1), 0);
+    const metaJogos = totalCotas * (b.jogos_por_cota || 4);
+    const totalJogos = (b.apostas || []).length;
+    if (totalJogos < metaJogos) {
+      const faltam = metaJogos - totalJogos;
+      if (!confirm(`⚠️ ATENÇÃO: O bolão possui ${totalCotas} cotas (${metaJogos} jogos esperados), mas apenas ${totalJogos} jogos foram registrados (faltam ${faltam} jogos).\n\nSe imprimir agora, faltarão volantes ou a marcação ficará incompleta.\n\nDeseja imprimir os volantes assim mesmo?`)) {
+        return;
+      }
+    }
+  }
   if (!state.slipsPayload || !state.slipsPayload.slips.length) {
     buildSlipsPreview();
   }

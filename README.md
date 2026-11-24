@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.21 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.22 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -33,9 +33,12 @@ Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via
 
 ---
 
-## 🎯 Principais Recursos (V. 2.21)
+## 🎯 Principais Recursos (V. 2.22)
 
-1. **Barra de Atalhos Fixa no Celular e Cabeçalho Otimizado**:
+1. **Alerta Visual de Cotas Incompletas e Recálculo Automático ao Excluir Jogos**:
+   - Destaque visual em vermelho e âmbar em caso de participante com cotas acima dos jogos registrados (ex: 2 cotas = 8 jogos, mas apenas 4 cadastrados), com alertas no controle de cotas, badge no participante e alerta no KPI.
+   - Recálculo automático de cotas ao excluir jogos: se jogos suficientes forem removidos (ex: exclusão de 4 jogos), a cota diminui automaticamente e atualiza as cotas do bolão.
+2. **Barra de Atalhos Fixa no Celular e Cabeçalho Otimizado**:
    - Barra de navegação e atalhos (Bolão, Registrar & Sortear, Jogos, Estatísticas, Impressão) fixa no topo no celular, cabeçalho limpo sem ícone MS e indicador de nuvem compacto (apenas bolinha verde).
 2. **Numeração Contínua e Prévia sem Duplicações**:
    - Cada jogo é numerado de acordo com a sequência global do bolão (1, 2, 3, 4, 5...) no cabeçalho do volante óptico, e a prévia na tela exibe apenas o volante real sem blocos redundantes.
