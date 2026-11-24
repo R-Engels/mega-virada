@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.11 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.12 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1231,37 +1231,6 @@ function bindEvents() {
 
   // Atualizar Caixa
   $('#btn-sync')?.addEventListener('click', atualizarResultadoCaixa);
-
-  // Exportar / Importar JSON
-  $('#btn-export-json')?.addEventListener('click', () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(localStorage.getItem('megasena_local_bolao_data') || '{}');
-    const a = document.createElement('a');
-    a.href = dataStr;
-    a.download = `backup_bolao_potenza_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-  });
-
-  $('#input-import-json')?.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const d = JSON.parse(evt.target.result);
-        if (d.boloes) {
-          state.boloes = d.boloes;
-          if (d.nomes_catalogo) state.nomesCatalogo = d.nomes_catalogo;
-          state.currentBolaoId = state.boloes[0]?.id;
-          persistAndBroadcast();
-          renderAll();
-          toast('Backup restaurado com sucesso!');
-        }
-      } catch (err) {
-        toast('Arquivo JSON inválido.', true);
-      }
-    };
-    reader.readAsText(file);
-  });
 
   // Filtro de jogos
   $('#filtro-jogos')?.addEventListener('input', () => {
