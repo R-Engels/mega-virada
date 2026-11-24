@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.25 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.26 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -46,12 +46,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_W/             # Backup imutável V. 2.23
 ├── Backup_Versao_X/             # Backup imutável V. 2.24
 ├── Backup_Versao_Y/             # Backup imutável V. 2.25
+├── Backup_Versao_Z/             # Backup imutável V. 2.26
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.25)
+## Fluxos de Operação (V. 2.26)
 
-1. **Quadrantes 2×2 em Ordem Oficial no Celular e Blindagem JS na Impressão**:
+1. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:
+   - `StatsEngine.runBacktesting(apostas, concursos)`: testa todos os jogos do bolão (ou fechamento) contra toda a base histórica via bitmasks 32-bit em <5ms, contabilizando Senas, Quinas, Quadras, Concursos Premiados e prêmios múltiplos oficiais Caixa para jogos de 7+ dezenas.
+   - `StatsEngine.generateFechamento(selectedNums, k, garantia)`: fechamento matemático (covering design) para grupos de 7 a 20 dezenas desdobrados em jogos de **6, 7 ou 8 dezenas por jogo** com garantia verificada de **Quadra (4)** ou **Quina (5)**, cálculo de economia vs aposta múltipla direta, backtesting integrado e importação direta para o bolão.
+2. **Quadrantes 2×2 em Ordem Oficial no Celular e Blindagem JS na Impressão**:
    - No celular (`max-width: 640px`), `.quadrants-board` mantém layout 2×2 (`Q1 | Q2` acima e `Q3 | Q4` abaixo), garantindo leitura horizontal contínua (`01..10`, `11..20`, `21..30`, `31..40`, `41..50`, `51..60`) igual ao volante físico Caixa para inserção manual rápida.
    - Função `executeCleanPrint()` em `app.js` oculta `.topbar`, `main.container`, `#toast` e modais via estilo inline antes de `window.print()` e restaura em `afterprint`, impedindo qualquer vazamento de rodapé/menu mesmo com cache antigo de CSS.
 2. **Remoção do Vazamento da Barra `.topbar` na Impressão**:

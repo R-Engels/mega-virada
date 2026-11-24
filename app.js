@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.25 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.26 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -10,6 +10,8 @@ const state = {
   nomesCatalogo: [],
   currentBolaoId: null,
   bolaoPickerSelected: new Set(),
+  fechamentoSelected: new Set(),
+  fechamentoResult: null,
   printerProfiles: [],
   currentProfile: null,
   slipsPayload: null,
@@ -1498,6 +1500,22 @@ function bindEvents() {
   });
 
   $('#btn-clear-conf')?.addEventListener('click', limparConferenciaVisual);
+  $('#btn-backtesting-bolao')?.addEventListener('click', runBolaoBacktesting);
+
+  // Fechamentos Matemáticos (6, 7 ou 8 dezenas)
+  renderFechamentoPicker();
+  $('#btn-fech-sugerir-12')?.addEventListener('click', () => sugerirFechamento(12, 'quentes'));
+  $('#btn-fech-sugerir-15')?.addEventListener('click', () => sugerirFechamento(15, 'balanceadas'));
+  $('#btn-fech-limpar')?.addEventListener('click', () => {
+    state.fechamentoSelected.clear();
+    state.fechamentoResult = null;
+    renderFechamentoPicker();
+    const box = $('#fech-results-box');
+    if (box) box.style.display = 'none';
+  });
+  $('#btn-fech-gerar')?.addEventListener('click', gerarFechamentoUi);
+  $('#btn-fech-add-bolao')?.addEventListener('click', adicionarFechamentoAoBolao);
+  $('#btn-fech-backtest')?.addEventListener('click', testarFechamentoBacktesting);
 
   // Conferência Modal (Legado)
   $('#btn-conferir-modal')?.addEventListener('click', abrirModalConferencia);
@@ -1548,6 +1566,326 @@ function applyTheme(theme) {
     if (icon) icon.textContent = '🌙';
     if (label) label.textContent = 'Escuro';
     if (btn) btn.title = 'Alternar para tema claro';
+  }
+}
+
+// ===== BACKTESTING HISTÓRICO (TODOS OS CONCURSOS) =====
+
+function renderBacktestingResult(containerEl, bt, titulo) {
+  if (!containerEl || !bt) return;
+  const multNote = bt.has_multipla
+    ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Inclui prêmios múltiplos oficiais Caixa para jogos de 7+ dezenas.</div>`
+    : '';
+
+  const rowsHtml = bt.top_hits.length
+    ? bt.top_hits
+        .map((h) => {
+          const drawSet = new Set(h.sorteadas || []);
+          const balls = (h.dezenas || [])
+            .map((d) => `<span class="ball ${drawSet.has(d) ? 'hit' : 'dim'}">${String(d).padStart(2, '0')}</span>`)
+            .join('');
+          const badgeClass = h.qtd_acertos === 6 ? 'sena' : h.qtd_acertos === 5 ? 'quina' : 'quadra';
+          const multTxt = h.premios_mult
+            ? ` <small style="color:var(--muted)">(${h.premios_mult.senas ? h.premios_mult.senas + 'S ' : ''}${h.premios_mult.quinas ? h.premios_mult.quinas + 'Q5 ' : ''}${h.premios_mult.quadras ? h.premios_mult.quadras + 'Q4' : ''})</small>`
+            : '';
+          return `
+            <tr>
+              <td><b>#${h.concurso}</b><br><small class="muted">${h.data}</small></td>
+              <td>${h.participante_nome} <small class="muted">(Jogo #${h.jogo_idx})</small></td>
+              <td><div style="display:flex;flex-wrap:wrap;gap:3px">${balls}</div></td>
+              <td style="text-align:center"><span class="award-badge ${badgeClass}">${h.faixa} (${h.qtd_acertos})</span>${multTxt}</td>
+            </tr>
+          `;
+        })
+        .join('')
+    : `<tr><td colspan="4" class="muted" style="text-align:center;padding:14px">Nenhuma Quadra, Quina ou Sena encontrada nestes jogos nos ${bt.total_concursos} concursos analisados.</td></tr>`;
+
+  containerEl.style.display = 'block';
+  containerEl.innerHTML = `
+    <div class="bt-header">
+      <div>
+        <strong style="font-size:13.5px;color:#38bdf8">📊 ${titulo}</strong>
+        <span class="muted" style="font-size:11.5px;margin-left:6px">${bt.total_jogos} jogo(s) × ${bt.total_concursos.toLocaleString('pt-BR')} concursos</span>
+      </div>
+      <button class="btn btn-sm btn-ghost" onclick="this.closest('.backtesting-panel').style.display='none'">✕ Fechar</button>
+    </div>
+    ${multNote}
+    <div class="bt-kpis">
+      <div class="bt-kpi sena">
+        <div class="bt-lbl">Senas (6)</div>
+        <div class="bt-val">${bt.senas}</div>
+        ${bt.has_multipla ? `<div class="bt-sub">Caixa: ${bt.senas_mult}</div>` : ''}
+      </div>
+      <div class="bt-kpi quina">
+        <div class="bt-lbl">Quinas (5)</div>
+        <div class="bt-val">${bt.quinas}</div>
+        ${bt.has_multipla ? `<div class="bt-sub">Caixa: ${bt.quinas_mult}</div>` : ''}
+      </div>
+      <div class="bt-kpi quadra">
+        <div class="bt-lbl">Quadras (4)</div>
+        <div class="bt-val">${bt.quadras}</div>
+        ${bt.has_multipla ? `<div class="bt-sub">Caixa: ${bt.quadras_mult}</div>` : ''}
+      </div>
+      <div class="bt-kpi">
+        <div class="bt-lbl">Concursos Premiados</div>
+        <div class="bt-val">${bt.concursos_premiados}</div>
+        <div class="bt-sub">Ternos: ${bt.ternos}</div>
+      </div>
+    </div>
+    <div class="table-wrap" style="max-height:260px;overflow-y:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Concurso</th>
+            <th>Jogo / Participante</th>
+            <th>Dezenas (Acertos em destaque)</th>
+            <th style="text-align:center">Premiação</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function runBolaoBacktesting() {
+  const b = getCurrentBolao();
+  if (!b || !(b.apostas || []).length) {
+    toast('Nenhum jogo registrado no bolão para testar.', true);
+    return;
+  }
+  if (!state.concursos || !state.concursos.length) {
+    toast('Base histórica de concursos ainda não carregada.', true);
+    return;
+  }
+  const bt = StatsEngine.runBacktesting(b.apostas, state.concursos);
+  renderBacktestingResult($('#backtesting-panel'), bt, `Backtesting Histórico — ${b.nome}`);
+  toast(`Backtesting concluído em ${bt.total_concursos} concursos!`);
+}
+
+// ===== FECHAMENTOS MATEMÁTICOS (6, 7 OU 8 DEZENAS POR JOGO) =====
+
+function renderFechamentoPicker() {
+  const container = $('#fech-volante-picker');
+  if (!container) return;
+
+  const qDefs = [
+    { key: 'q1', label: 'Q1 (01–25)', rows: [[1,2,3,4,5],[11,12,13,14,15],[21,22,23,24,25]] },
+    { key: 'q2', label: 'Q2 (06–30)', rows: [[6,7,8,9,10],[16,17,18,19,20],[26,27,28,29,30]] },
+    { key: 'q3', label: 'Q3 (31–55)', rows: [[31,32,33,34,35],[41,42,43,44,45],[51,52,53,54,55]] },
+    { key: 'q4', label: 'Q4 (36–60)', rows: [[36,37,38,39,40],[46,47,48,49,50],[56,57,58,59,60]] },
+  ];
+
+  const html = qDefs
+    .map((q) => {
+      const nums = q.rows.flat();
+      const selInQ = nums.filter((n) => state.fechamentoSelected.has(n)).length;
+      const btns = nums
+        .map((n) => {
+          const isSel = state.fechamentoSelected.has(n);
+          return `<button type="button" class="ball-pick ${isSel ? 'selected' : ''}" data-fech-num="${n}">${String(n).padStart(2, '0')}</button>`;
+        })
+        .join('');
+      return `
+        <div class="quadrant-box ${q.key}">
+          <div class="quadrant-head">
+            <span>${q.label}</span>
+            <span class="q-count">${selInQ} sel.</span>
+          </div>
+          <div class="quadrant-grid">${btns}</div>
+        </div>
+      `;
+    })
+    .join('');
+
+  container.innerHTML = `<div class="quadrants-board">${html}</div>`;
+  const countEl = $('#fech-sel-count');
+  if (countEl) countEl.textContent = `Selecionadas: ${state.fechamentoSelected.size} / 20`;
+
+  container.querySelectorAll('[data-fech-num]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const n = parseInt(btn.getAttribute('data-fech-num'), 10);
+      if (state.fechamentoSelected.has(n)) {
+        state.fechamentoSelected.delete(n);
+      } else {
+        if (state.fechamentoSelected.size >= 20) {
+          toast('Máximo de 20 dezenas para o fechamento matemático.', true);
+          return;
+        }
+        state.fechamentoSelected.add(n);
+      }
+      renderFechamentoPicker();
+    });
+  });
+}
+
+function sugerirFechamento(qtd, mode) {
+  state.fechamentoSelected.clear();
+  const scored = StatsEngine.scoreNumbers(state.concursos || [], 100);
+  if (mode === 'quentes') {
+    scored
+      .slice()
+      .sort((a, b) => b.freq_total - a.freq_total)
+      .slice(0, qtd)
+      .forEach((x) => state.fechamentoSelected.add(x.dezena));
+  } else {
+    // Balanceada: distribui proporcionalmente nos 4 quadrantes pelos maiores scores
+    const byQ = { 1: [], 2: [], 3: [], 4: [] };
+    scored
+      .slice()
+      .sort((a, b) => b.score - a.score)
+      .forEach((x) => byQ[StatsEngine.getQuadrant(x.dezena)].push(x.dezena));
+    let idx = 0;
+    while (state.fechamentoSelected.size < qtd) {
+      const q = (idx % 4) + 1;
+      const next = byQ[q].shift();
+      if (next) state.fechamentoSelected.add(next);
+      idx++;
+      if (idx > 80) break;
+    }
+  }
+  renderFechamentoPicker();
+  toast(`${state.fechamentoSelected.size} dezenas sugeridas (${mode === 'quentes' ? 'mais sorteadas' : 'balanceadas'}).`);
+}
+
+function gerarFechamentoUi() {
+  const k = parseInt($('#fech-bet-size')?.value, 10) || 6;
+  const garantia = parseInt($('#fech-garantia')?.value, 10) || 4;
+  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
+
+  if (nums.length <= k) {
+    toast(`Selecione pelo menos ${k + 1} dezenas no volante acima para fechar jogos de ${k} números.`, true);
+    return;
+  }
+
+  try {
+    const res = StatsEngine.generateFechamento(nums, k, garantia, 6.0);
+    state.fechamentoResult = res;
+
+    const box = $('#fech-results-box');
+    const kpis = $('#fech-kpis');
+    const list = $('#fech-games-list');
+    const btBox = $('#fech-backtesting-box');
+    if (btBox) btBox.style.display = 'none';
+    if (box) box.style.display = 'block';
+
+    if (kpis) {
+      kpis.innerHTML = `
+        <div class="kpi">
+          <div class="label">Jogos Gerados (${res.k} dez.)</div>
+          <div class="value">${res.total_jogos}</div>
+          <div class="sub-label">vs ${res.comb_total.toLocaleString('pt-BR')} combinações totais</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Custo do Fechamento</div>
+          <div class="value" style="color:var(--accent)">R$ ${res.custo_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="sub-label">R$ ${res.custo_unitario.toFixed(2)} por jogo de ${res.k} dez.</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Economia vs Múltipla (${res.v} dez.)</div>
+          <div class="value" style="color:var(--warn)">${res.economia_pct}%</div>
+          <div class="sub-label">Múltipla direta: R$ ${res.custo_multipla_direta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Garantia (${res.garantia === 5 ? 'Quina' : 'Quadra'})</div>
+          <div class="value" style="color:var(--accent)">${res.cobertura_pct}%</div>
+          <div class="sub-label">${res.verificacao_exata ? 'Verificação matemática exata' : 'Amostra 4.000 cenários'}</div>
+        </div>
+      `;
+    }
+
+    if (list) {
+      list.innerHTML = res.jogos
+        .map((j, idx) => {
+          const balls = j.map((d) => `<span class="ball">${String(d).padStart(2, '0')}</span>`).join('');
+          return `
+            <div class="fech-game-item">
+              <span class="fech-game-idx">#${idx + 1}</span>
+              <div class="fech-game-balls">${balls}</div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+
+    toast(`Fechamento gerado: ${res.total_jogos} jogos de ${res.k} dezenas (${res.cobertura_pct}% garantia).`);
+  } catch (err) {
+    toast(err.message || 'Erro ao gerar fechamento.', true);
+  }
+}
+
+function testarFechamentoBacktesting() {
+  if (!state.fechamentoResult || !state.fechamentoResult.jogos.length) {
+    toast('Gere um fechamento primeiro.', true);
+    return;
+  }
+  const res = state.fechamentoResult;
+  const bt = StatsEngine.runBacktesting(res.jogos, state.concursos || []);
+  renderBacktestingResult(
+    $('#fech-backtesting-box'),
+    bt,
+    `Backtesting do Fechamento (${res.v}→${res.k} dez., garantia ${res.garantia === 5 ? 'Quina' : 'Quadra'})`
+  );
+}
+
+function adicionarFechamentoAoBolao() {
+  const b = getCurrentBolao();
+  const res = state.fechamentoResult;
+  if (!b || !res || !res.jogos.length) {
+    toast('Gere um fechamento primeiro.', true);
+    return;
+  }
+
+  const nomeSelecionado = getSelectedParticipantName();
+  const partNome = (nomeSelecionado || `FECHAMENTO ${res.v}→${res.k}`).toUpperCase();
+
+  if (!confirm(`Adicionar ${res.total_jogos} jogo(s) de ${res.k} dezenas ao bolão "${b.nome}" para "${partNome}"?`)) {
+    return;
+  }
+
+  b.participantes = b.participantes || [];
+  b.apostas = b.apostas || [];
+
+  let p = b.participantes.find((x) => (x.nome || '').toUpperCase() === partNome);
+  if (!p) {
+    const newId = b.participantes.reduce((m, x) => Math.max(m, x.id || 0), 0) + 1;
+    const jogosPorCota = Math.max(1, parseInt(b.jogos_por_cota, 10) || 4);
+    p = {
+      id: newId,
+      nome: partNome,
+      cotas: Math.max(1, Math.ceil(res.total_jogos / jogosPorCota)),
+      pago: 0,
+      valor_pago: 0,
+    };
+    b.participantes.push(p);
+  }
+
+  const seen = new Set(
+    b.apostas.map((a) => [...(a.dezenas || [])].sort((x, y) => x - y).join('-'))
+  );
+  let nextApostaId = b.apostas.reduce((m, a) => Math.max(m, a.id || 0), 0) + 1;
+  let adicionados = 0;
+
+  res.jogos.forEach((dez) => {
+    const sig = [...dez].sort((x, y) => x - y).join('-');
+    if (seen.has(sig)) return;
+    seen.add(sig);
+    b.apostas.push({
+      id: nextApostaId++,
+      participante_id: p.id,
+      participante_nome: p.nome,
+      dezenas: [...dez],
+      origem: `fechamento_${res.v}_${res.k}_g${res.garantia}`,
+    });
+    adicionados++;
+  });
+
+  if (adicionados > 0) {
+    persistAndBroadcast();
+    renderAll();
+    toast(`${adicionados} jogo(s) de ${res.k} dezenas adicionados ao bolão!`);
+  } else {
+    toast('Todos os jogos deste fechamento já existem no bolão.');
   }
 }
 

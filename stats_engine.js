@@ -1,7 +1,7 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.00 (Serverless)
- * Motor Estatístico, Regras Recomendadas, Gerador e Conferência em JavaScript Puro
+ * Mega-Sena Potenza — V. 2.26 (Nuvem 24h Padrão)
+ * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
 const StatsEngine = (() => {
@@ -441,6 +441,332 @@ const StatsEngine = (() => {
     return `rgb(${r}, ${g}, ${b})`;
   }
 
+  // Popcount 32-bit rápido para bitmasks
+  function popcount32(x) {
+    x = x - ((x >>> 1) & 0x55555555);
+    x = (x & 0x33333333) + ((x >>> 2) & 0x33333333);
+    return (((x + (x >>> 4)) & 0x0f0f0f0f) * 0x01010101) >>> 24;
+  }
+
+  function combInt(n, r) {
+    if (r < 0 || r > n) return 0;
+    if (r === 0 || r === n) return 1;
+    const k = Math.min(r, n - r);
+    let res = 1;
+    for (let i = 1; i <= k; i++) {
+      res = (res * (n - i + 1)) / i;
+    }
+    return Math.round(res);
+  }
+
+  // Backtesting Histórico: testa todas as apostas contra todos os concursos passados
+  // Suporta jogos de 6, 7, 8 ou mais dezenas (incluindo prêmios múltiplos oficiais Caixa)
+  function runBacktesting(apostas, concursos) {
+    const games = (apostas || []).map((a, idx) => {
+      const arr = Array.isArray(a) ? a : (a.dezenas || []);
+      let lo = 0;
+      let hi = 0;
+      for (let i = 0; i < arr.length; i++) {
+        const n = arr[i];
+        if (n >= 1 && n <= 30) lo |= (1 << (n - 1));
+        else if (n >= 31 && n <= 60) hi |= (1 << (n - 31));
+      }
+      return {
+        idx: idx + 1,
+        participante_nome: Array.isArray(a) ? `Fechamento #${idx + 1}` : (a.participante_nome || 'Participante'),
+        dezenas: arr,
+        k: arr.length,
+        lo,
+        hi,
+      };
+    });
+
+    const totalConcursos = (concursos || []).length;
+    let senas = 0;
+    let quinas = 0;
+    let quadras = 0;
+    let ternos = 0;
+    let senasMult = 0;
+    let quinasMult = 0;
+    let quadrasMult = 0;
+    let concursosPremiados = 0;
+    const hasMultipla = games.some((g) => g.k > 6);
+    const senasList = [];
+    const quinasList = [];
+    const quadrasList = [];
+
+    for (let cIdx = 0; cIdx < totalConcursos; cIdx++) {
+      const c = concursos[cIdx];
+      const dez = c.dezenas || [];
+      let cLo = 0;
+      let cHi = 0;
+      for (let i = 0; i < dez.length; i++) {
+        const n = dez[i];
+        if (n >= 1 && n <= 30) cLo |= (1 << (n - 1));
+        else if (n >= 31 && n <= 60) cHi |= (1 << (n - 31));
+      }
+
+      let wonThisDraw = false;
+      for (let gIdx = 0; gIdx < games.length; gIdx++) {
+        const g = games[gIdx];
+        const h = popcount32(g.lo & cLo) + popcount32(g.hi & cHi);
+        if (h === 3) {
+          ternos++;
+        } else if (h >= 4) {
+          wonThisDraw = true;
+          const k = Math.max(6, g.k);
+          const sM = h === 6 ? 1 : 0;
+          const q5M = h >= 5 ? combInt(h, 5) * combInt(k - h, 1) : 0;
+          const q4M = h >= 4 ? combInt(h, 4) * combInt(k - h, 2) : 0;
+          senasMult += sM;
+          quinasMult += q5M;
+          quadrasMult += q4M;
+
+          const hitObj = {
+            concurso: c.concurso,
+            data: c.data || '',
+            jogo_idx: g.idx,
+            participante_nome: g.participante_nome,
+            dezenas: g.dezenas,
+            sorteadas: dez,
+            qtd_acertos: h,
+            faixa: h === 6 ? 'SENA' : h === 5 ? 'QUINA' : 'QUADRA',
+            premios_mult: k > 6 ? { senas: sM, quinas: q5M, quadras: q4M } : null,
+          };
+
+          if (h === 6) {
+            senas++;
+            senasList.push(hitObj);
+          } else if (h === 5) {
+            quinas++;
+            quinasList.push(hitObj);
+          } else {
+            quadras++;
+            quadrasList.push(hitObj);
+          }
+        }
+      }
+      if (wonThisDraw) concursosPremiados++;
+    }
+
+    // Ordena mais recentes primeiro em cada faixa
+    senasList.sort((a, b) => b.concurso - a.concurso);
+    quinasList.sort((a, b) => b.concurso - a.concurso);
+    quadrasList.sort((a, b) => b.concurso - a.concurso);
+
+    const topHits = [...senasList, ...quinasList, ...quadrasList.slice(0, 30)];
+
+    return {
+      total_concursos: totalConcursos,
+      total_jogos: games.length,
+      has_multipla: hasMultipla,
+      senas,
+      quinas,
+      quadras,
+      ternos,
+      senas_mult: senasMult,
+      quinas_mult: quinasMult,
+      quadras_mult: quadrasMult,
+      concursos_premiados: concursosPremiados,
+      top_hits: topHits,
+    };
+  }
+
+  // Gera todas as máscaras de bits de tamanho r sobre v elementos (0..v-1)
+  function genBitmasks(v, r) {
+    const out = [];
+    function rec(start, left, mask) {
+      if (left === 0) {
+        out.push(mask);
+        return;
+      }
+      for (let i = start; i <= v - left; i++) {
+        rec(i + 1, left - 1, mask | (1 << i));
+      }
+    }
+    rec(0, r, 0);
+    return out;
+  }
+
+  // Fechamentos Matemáticos (Covering Design C(v, k, t, m=6))
+  // Suporta jogos de 6, 7 ou 8 dezenas por jogo (k = 6, 7, 8) com garantia de Quadra (4) ou Quina (5)
+  function generateFechamento(selectedNums, k = 6, garantia = 4, basePrice6 = 6.0) {
+    const nums = Array.from(
+      new Set((selectedNums || []).map((n) => parseInt(n, 10)).filter((n) => n >= 1 && n <= 60))
+    ).sort((a, b) => a - b);
+
+    const v = nums.length;
+    const betSize = Math.max(6, Math.min(8, parseInt(k, 10) || 6));
+    const targetHit = Math.max(4, Math.min(5, parseInt(garantia, 10) || 4));
+    const condicao = 6;
+
+    if (v <= betSize) {
+      throw new Error(`Selecione pelo menos ${betSize + 1} dezenas para fechar jogos de ${betSize} números.`);
+    }
+    if (v > 20) {
+      throw new Error('Selecione no máximo 20 dezenas para o fechamento matemático.');
+    }
+
+    // Gera conjunto de alvos (combinações de 6 dezenas dentre as v escolhidas)
+    const totalTargetsExact = combInt(v, condicao);
+    let targets = [];
+    let isExactVerification = true;
+
+    if (totalTargetsExact <= 8008) {
+      // v <= 16: verificação 100% exata sobre todas as C(v, 6) combinações
+      targets = genBitmasks(v, condicao);
+    } else {
+      // v = 17..20: amostra estratificada determinística de 4000 cenários de 6 dezenas
+      isExactVerification = false;
+      const seen = new Set();
+      let seed = v * 10007 + betSize * 997 + targetHit * 131;
+      const rand = () => {
+        seed = (seed * 1664525 + 1013904223) >>> 0;
+        return seed / 4294967296;
+      };
+      while (targets.length < 4000) {
+        let mask = 0;
+        let bits = 0;
+        while (bits < condicao) {
+          const bit = 1 << Math.floor(rand() * v);
+          if (!(mask & bit)) {
+            mask |= bit;
+            bits++;
+          }
+        }
+        if (!seen.has(mask)) {
+          seen.add(mask);
+          targets.push(mask);
+        }
+      }
+    }
+
+    const combTotal = combInt(v, betSize);
+    const useExactCandidates = combTotal <= 2500;
+    const allCandidates = useExactCandidates ? genBitmasks(v, betSize) : null;
+
+    let uncovered = targets.slice();
+    const chosenMasks = [];
+    const chosenSet = new Set();
+    const maxGames = 180;
+
+    // Helper para expandir uma máscara de 6 bits para betSize bits (para k=7 ou k=8)
+    const expandMask = (baseMask, salt) => {
+      let m = baseMask;
+      let count = popcount32(m);
+      let idx = salt % v;
+      while (count < betSize) {
+        const bit = 1 << idx;
+        if (!(m & bit)) {
+          m |= bit;
+          count++;
+        }
+        idx = (idx + 7) % v;
+      }
+      return m;
+    };
+
+    let iter = 0;
+    while (uncovered.length > 0 && chosenMasks.length < maxGames) {
+      iter++;
+      let candidates;
+      if (useExactCandidates) {
+        candidates = allCandidates;
+      } else {
+        // Pool inteligente de candidatos focados nos alvos ainda descobertos
+        const candSet = new Set();
+        const sampleLimit = Math.min(uncovered.length, 160);
+        const step = Math.max(1, Math.floor(uncovered.length / sampleLimit));
+        for (let i = 0; i < uncovered.length && candSet.size < 320; i += step) {
+          const tMask = uncovered[i];
+          if (betSize === 6) {
+            candSet.add(tMask);
+          } else {
+            candSet.add(expandMask(tMask, i + iter * 3));
+            candSet.add(expandMask(tMask, i + iter * 11 + 5));
+          }
+        }
+        // Adiciona variações aleatórias controladas
+        let seed = iter * 2654435761 + uncovered.length;
+        const rand = () => {
+          seed = (seed * 1664525 + 1013904223) >>> 0;
+          return seed / 4294967296;
+        };
+        while (candSet.size < 420) {
+          let m = 0;
+          let b = 0;
+          while (b < betSize) {
+            const bit = 1 << Math.floor(rand() * v);
+            if (!(m & bit)) {
+              m |= bit;
+              b++;
+            }
+          }
+          candSet.add(m);
+        }
+        candidates = Array.from(candSet);
+      }
+
+      let bestMask = -1;
+      let bestCov = -1;
+
+      for (let c = 0; c < candidates.length; c++) {
+        const cm = candidates[c];
+        if (chosenSet.has(cm)) continue;
+        let cov = 0;
+        for (let u = 0; u < uncovered.length; u++) {
+          if (popcount32(cm & uncovered[u]) >= targetHit) cov++;
+        }
+        if (cov > bestCov) {
+          bestCov = cov;
+          bestMask = cm;
+          if (cov === uncovered.length) break;
+        }
+      }
+
+      if (bestMask === -1 || bestCov <= 0) break;
+      chosenMasks.push(bestMask);
+      chosenSet.add(bestMask);
+      uncovered = uncovered.filter((u) => popcount32(bestMask & u) < targetHit);
+    }
+
+    // Converte máscaras para dezenas ordenadas
+    const jogos = chosenMasks.map((mask) => {
+      const arr = [];
+      for (let i = 0; i < v; i++) {
+        if (mask & (1 << i)) arr.push(nums[i]);
+      }
+      return arr;
+    });
+
+    const coveredCount = targets.length - uncovered.length;
+    const coberturaPct = Math.round((coveredCount / targets.length) * 10000) / 100;
+    const custoUnitario = getBetPrice(betSize, basePrice6);
+    const custoTotal = Math.round(jogos.length * custoUnitario * 100) / 100;
+    const custoMultiplaDireta = getBetPrice(v, basePrice6);
+    const economiaPct = custoMultiplaDireta > 0
+      ? Math.max(0, Math.round((1 - custoTotal / custoMultiplaDireta) * 1000) / 10)
+      : 0;
+
+    return {
+      dezenas_selecionadas: nums,
+      v,
+      k: betSize,
+      garantia: targetHit,
+      condicao,
+      jogos,
+      total_jogos: jogos.length,
+      comb_total: combTotal,
+      custo_unitario: custoUnitario,
+      custo_total: custoTotal,
+      custo_multipla_direta: custoMultiplaDireta,
+      economia_pct: economiaPct,
+      cobertura_pct: coberturaPct,
+      verificacao_exata: isExactVerification,
+      cenarios_testados: targets.length,
+    };
+  }
+
   return {
     getQuadrant,
     getBetPrice,
@@ -450,6 +776,8 @@ const StatsEngine = (() => {
     generatePotenzaGames,
     conferirApostas,
     getExcelHeatmapColor,
+    runBacktesting,
+    generateFechamento,
   };
 })();
 
