@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.16 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.17 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -37,12 +37,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_N/             # Backup imutável V. 2.14
 │   ├── Backup_Versao_O/             # Backup imutável V. 2.15
 │   ├── Backup_Versao_P/             # Backup imutável V. 2.16
+│   ├── Backup_Versao_Q/             # Backup imutável V. 2.17
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.16)
+## Fluxos de Operação (V. 2.17)
 
-1. **Reestruturação de KPIs Financeiros e Término de Redundância**:
+1. **Identificação de Jogo e Participante no Volante Impresso**:
+   - Cada volante gerado (SVG 83x185mm) agora inclui identificação milimétrica textual e indelével no topo e nas seções de cada jogo (J1, J2, J3), com o nome do participante em destaque, o número do jogo (#1, #2...) e as 6 dezenas.
+   - Textos posicionados em zonas seguras que não interferem nos sensores ópticos da leitora da Caixa.
+   - Os cartões de preview na interface e as páginas de impressão A4 agrupadas exibem cabeçalho com nome do participante e identificação completa.
+2. **Reestruturação de KPIs Financeiros e Término de Redundância**:
    - Removido o indicador redundante de "Total de Cotas" e renomeado o valor matemático da arrecadação.
    - Inclusão dos cartões de "Total Pago (Recebido)" e "Valor Faltante (Pendente)" com alertas claros de cotas a receber.
 2. **Compactação da Lista Impressa de Jogos (4 Colunas A4)**:

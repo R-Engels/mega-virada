@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.16 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.17 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -864,15 +864,28 @@ function buildSlipsPreview() {
     return;
   }
 
+  const partMap = {};
+  (b.participantes || []).forEach(p => { partMap[p.id] = p.nome; });
+
   const teimosinha = $('#print-teimosinha')?.checked;
-  const payload = PrinterService.buildSlipsPayload(apostas, { teimosinha });
+  const payload = PrinterService.buildSlipsPayload(apostas, {
+    teimosinha,
+    participantesMap: partMap,
+    concurso: b.concurso,
+  });
   state.slipsPayload = payload;
 
-  let html = `<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center">`;
+  let html = `<div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:center">`;
   payload.slips.forEach((s) => {
     html += `
-      <div style="background:#fff;padding:8px;border-radius:6px;box-shadow:0 2px 6px rgba(0,0,0,0.3)">
-        <div style="font-size:11px;color:#333;margin-bottom:4px;font-weight:700">Volante ${s.slip_index} (${s.total_jogos} jogos)</div>
+      <div style="background:#fff;padding:10px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.3);max-width:340px;">
+        <div style="font-size:12px;color:#0f172a;margin-bottom:6px;font-weight:700;display:flex;justify-content:space-between;border-bottom:1px solid #e2e8f0;padding-bottom:4px;">
+          <span>Volante #${s.slip_index} de ${payload.total_slips}</span>
+          <span style="font-size:10px;color:#64748b;font-weight:normal;">${s.total_jogos} jogo(s)</span>
+        </div>
+        <div style="font-size:10px;color:#334155;margin-bottom:8px;background:#f8fafc;padding:6px;border-radius:6px;border:1px solid #e2e8f0;line-height:1.35;">
+          ${s.jogos.map(j => `<div><strong>J${j.game_idx_in_slip}:</strong> ${j.participante_nome || 'Participante'} <span style="color:#64748b;">(Jogo #${j.global_index})</span></div>`).join('')}
+        </div>
         ${PrinterService.renderSlipSvg(s, payload.profile, true)}
       </div>
     `;

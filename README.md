@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.16 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.17 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -33,9 +33,11 @@ Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via
 
 ---
 
-## 🎯 Principais Recursos (V. 2.06)
+## 🎯 Principais Recursos (V. 2.17)
 
-1. **Volante Caixa em 4 Quadrantes Oficiais**:
+1. **Identificação de Participante e Jogo no Volante Impresso**:
+   - Cabeçalho e seções de cada volante (J1, J2, J3) impressos com o nome do participante, número do jogo e dezenas em zonas seguras de leitura óptica.
+2. **Volante Caixa em 4 Quadrantes Oficiais**:
    - Marcação rápida dividida nos quadrantes Q1 (01–25), Q2 (06–30), Q3 (31–55) e Q4 (36–60).
 2. **Completar Aposta Staged**:
    - Ao marcar de 1 a 5 dezenas e clicar em "Completar no Cartão", o sistema preenche as dezenas restantes diretamente no cartão para conferência e aprovação do operador antes de salvar no bolão.

@@ -1,7 +1,8 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.00 (Serverless)
+ * Mega-Sena Potenza — V. 2.17 (Nuvem 24h Padrão)
  * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (83x185mm)
+ * Com identificação visual de participante e número do jogo no volante impresso
  */
 
 const PrinterService = (() => {
@@ -27,6 +28,16 @@ const PrinterService = (() => {
     padrao: true,
   };
 
+  function escapeXml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&apos;');
+  }
+
   function getProfile() {
     try {
       const saved = localStorage.getItem('megasena_print_profile');
@@ -43,14 +54,22 @@ const PrinterService = (() => {
     const prof = options.profile || getProfile();
     const marcarTeimosinha = !!options.teimosinha;
     const jogosPorVolante = Math.min(3, Math.max(1, options.jogosPorVolante || 3));
+    const partMap = options.participantesMap || {};
+    const concurso = options.concurso || '';
 
-    // Agrupar jogos em volantes de 3
     const slips = [];
     for (let i = 0; i < games.length; i += jogosPorVolante) {
       const chunk = games.slice(i, i + jogosPorVolante);
       const marks = [];
 
       chunk.forEach((jogo, gIdx) => {
+        const globalIdx = i + gIdx + 1;
+        jogo.global_index = jogo.global_index || globalIdx;
+        jogo.game_idx_in_slip = gIdx + 1;
+        if (!jogo.participante_nome && jogo.participante_id && partMap[jogo.participante_id]) {
+          jogo.participante_nome = partMap[jogo.participante_id];
+        }
+
         const offsetY = prof.game_offsets[gIdx] || (gIdx * 48.0);
         const nums = jogo.dezenas || [];
 
@@ -107,6 +126,7 @@ const PrinterService = (() => {
         total_jogos: chunk.length,
         jogos: chunk,
         marks: marks,
+        concurso: concurso,
       });
     }
 
@@ -118,23 +138,40 @@ const PrinterService = (() => {
     };
   }
 
-  // Gera HTML/SVG de 1 volante óptico oficial
+  // Gera HTML/SVG de 1 volante óptico oficial com identificação visual clara
   function renderSlipSvg(slip, profile, showOutline = true) {
     const w = profile.volante_w_mm;
     const h = profile.volante_h_mm;
 
-    let svg = `<svg viewBox="0 0 ${w} ${h}" class="slip-svg" style="width:${w}mm;height:${h}mm;" xmlns="http://www.w3.org/2000/svg">`;
+    let svg = `<svg viewBox="0 0 ${w} ${h}" class="slip-svg" style="width:${w}mm;height:${h}mm;display:block;" xmlns="http://www.w3.org/2000/svg">`;
 
-    // Fundo do volante
+    // Fundo do volante e contorno de corte
     if (showOutline) {
-      svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="0.3"/>`;
-      // Linhas guia dos jogos
-      profile.game_offsets.forEach((offsetY, idx) => {
-        if (idx < slip.total_jogos) {
-          svg += `<text x="5" y="${offsetY + 10}" font-size="3" fill="#64748b" font-family="monospace">JOGO ${idx + 1}</text>`;
-        }
-      });
+      svg += `<rect x="0" y="0" width="${w}" height="${h}" fill="#ffffff" stroke="#94a3b8" stroke-dasharray="2,2" stroke-width="0.35"/>`;
     }
+
+    // Identificação superior do volante (área livre do sensor óptico)
+    svg += `<text x="5" y="6.0" font-size="3.0" font-weight="bold" fill="#000000" font-family="Arial, sans-serif">VOLANTE #${slip.slip_index} · POTENZA</text>`;
+    if (slip.concurso) {
+      svg += `<text x="${w - 5}" y="6.0" text-anchor="end" font-size="2.4" font-weight="600" fill="#333333" font-family="Arial, sans-serif">Conc. ${escapeXml(slip.concurso)}</text>`;
+    }
+
+    // Identificação de cada jogo e participante na zona de cabeçalho do jogo
+    slip.jogos.forEach((jogo, idx) => {
+      const rawNome = (jogo.participante_nome || 'PARTICIPANTE').toUpperCase();
+      const nomeCurto = rawNome.length > 32 ? rawNome.substring(0, 30) + '..' : rawNome;
+      const dezenasStr = (jogo.dezenas || []).map(n => String(n).padStart(2, '0')).join(' ');
+      const globalId = jogo.global_index || (idx + 1);
+
+      // Coordenadas Y seguras (fora das zonas de leitura de marcas)
+      const labelY = idx === 0 ? 11.5 : (idx === 1 ? 63.5 : 111.5);
+
+      svg += `<text x="5" y="${labelY}" font-size="2.7" font-weight="bold" fill="#000000" font-family="Arial, sans-serif">J${idx + 1}: ${escapeXml(nomeCurto)} (Jogo #${globalId})</text>`;
+      svg += `<text x="5" y="${labelY + 3.5}" font-size="2.2" font-weight="600" fill="#222222" font-family="Courier, monospace">${dezenasStr}</text>`;
+    });
+
+    // Rodapé de segurança do volante
+    svg += `<text x="5" y="181.0" font-size="2.1" fill="#444444" font-family="Arial, sans-serif">POTENZA MEGA DA VIRADA · VOLANTE #${slip.slip_index}</text>`;
 
     // Desenhar cada marca óptica preta (retângulo preenchido de preto)
     slip.marks.forEach((m) => {
@@ -158,7 +195,7 @@ const PrinterService = (() => {
       html += `<div class="a4-slips-row">`;
       pageSlips.forEach((s) => {
         html += `<div class="slip-card">`;
-        html += renderSlipSvg(s, prof, false);
+        html += renderSlipSvg(s, prof, true);
         html += `</div>`;
       });
       html += `</div>`;
