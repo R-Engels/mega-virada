@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.24 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.25 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -973,13 +973,36 @@ function resetCalibrationInputs() {
   toast('Calibração restaurada para o padrão oficial Caixa (83×185mm).');
 }
 
-function printAlignmentTest() {
+function executeCleanPrint(orientation, htmlContent) {
   const printArea = $('#print-area');
   if (!printArea) return;
-  const payload = PrinterService.buildAlignmentTestPayload(PrinterService.getProfile());
-  setPrintOrientation('landscape');
-  printArea.innerHTML = PrinterService.renderPrintArea(payload);
+
+  setPrintOrientation(orientation);
+  printArea.innerHTML = htmlContent;
+
+  const hideNodes = Array.from(document.querySelectorAll('header.topbar, .topbar, main.container, #toast, .modal-overlay'));
+  const prevStyles = hideNodes.map((el) => el.getAttribute('style'));
+  hideNodes.forEach((el) => el.style.setProperty('display', 'none', 'important'));
+
+  let restored = false;
+  const restoreUi = () => {
+    if (restored) return;
+    restored = true;
+    hideNodes.forEach((el, i) => {
+      if (prevStyles[i] === null) el.removeAttribute('style');
+      else el.setAttribute('style', prevStyles[i]);
+    });
+    window.removeEventListener('afterprint', restoreUi);
+  };
+
+  window.addEventListener('afterprint', restoreUi);
   window.print();
+  setTimeout(restoreUi, 300);
+}
+
+function printAlignmentTest() {
+  const payload = PrinterService.buildAlignmentTestPayload(PrinterService.getProfile());
+  executeCleanPrint('landscape', PrinterService.renderPrintArea(payload));
 }
 
 function setPrintOrientation(mode) {
@@ -1012,12 +1035,9 @@ function printSlips() {
   if (!state.slipsPayload || !state.slipsPayload.slips.length) {
     buildSlipsPreview();
   }
-  const printArea = $('#print-area');
-  if (!printArea || !state.slipsPayload) return;
+  if (!state.slipsPayload) return;
 
-  setPrintOrientation('landscape');
-  printArea.innerHTML = PrinterService.renderPrintArea(state.slipsPayload);
-  window.print();
+  executeCleanPrint('landscape', PrinterService.renderPrintArea(state.slipsPayload));
 }
 
 function imprimirListaJogos() {
@@ -1054,7 +1074,7 @@ function imprimirListaJogos() {
     `;
   }).join('');
 
-  printArea.innerHTML = `
+  const listHtml = `
     <div class="print-games-sheet">
       <div class="print-games-header">
         <div>
@@ -1072,7 +1092,7 @@ function imprimirListaJogos() {
     </div>
   `;
 
-  window.print();
+  executeCleanPrint('portrait', listHtml);
 }
 
 // ===== CONFERÊNCIA DE RESULTADOS (DIRETO NO REGISTRO) =====
