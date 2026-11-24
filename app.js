@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.09 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.10 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -119,7 +119,8 @@ function updateActionButtonsState(st) {
 
   if (!st) {
     if (quotaBox) {
-      quotaBox.innerHTML = '<span class="muted">Selecione ou digite um participante para gerenciar seus jogos.</span>';
+      quotaBox.innerHTML = '';
+      quotaBox.style.display = 'none';
     }
     if (btnUma) {
       btnUma.disabled = false;
@@ -144,6 +145,7 @@ function updateActionButtonsState(st) {
 
   if (st.isComplete) {
     if (quotaBox) {
+      quotaBox.style.display = 'block';
       quotaBox.innerHTML = `
         <span class="quota-tag complete">✅ Cota completa: ${st.totalJogos}/${st.maxJogos} jogos preenchidos</span>
         <span class="quota-tag">${pLabel}</span>
@@ -166,6 +168,7 @@ function updateActionButtonsState(st) {
   if (btnAdd) btnAdd.disabled = false;
 
   if (quotaBox) {
+    quotaBox.style.display = 'block';
     quotaBox.innerHTML = `
       <span class="quota-tag active">Preenchendo Jogo <b>${st.proximoJogoIndex} de ${st.maxJogos}</b></span>
       <span class="quota-tag">Restam ${st.restantes} jogo${st.restantes > 1 ? 's' : ''}</span>

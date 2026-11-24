@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.09 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.10 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 

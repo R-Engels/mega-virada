@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.09 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
+﻿﻿<!-- Versão: V. 2.10 (Nuvem 24h Padrão) | Atualizado em: 2026-11-23 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -30,12 +30,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_G/             # Backup imutável V. 2.07
 ├── Backup_Versao_H/             # Backup imutável V. 2.08
 │   ├── Backup_Versao_I/             # Backup imutável V. 2.09
+│   ├── Backup_Versao_J/             # Backup imutável V. 2.10
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.08)
+## Fluxos de Operação (V. 2.10)
 
-1. **Nuvem Firebase 24h como Padrão Único (Redundância Local Eliminada)**:
+1. **Remoção de Caixa e Texto Redundante de Participante**:
+   - Eliminada a caixa inicial com o texto "Selecione ou digite um participante para gerenciar seus jogos", liberando espaço vertical e posicionando o volante de quadrantes diretamente abaixo dos inputs.
+   - O container de status da cota aparece apenas de forma dinâmica quando um participante específico é selecionado.
+2. **Nuvem Firebase 24h como Padrão Único (Redundância Local Eliminada)**:
    - Removida a seleção redundante de modo Local vs Nuvem.
    - O sistema conecta automaticamente e opera exclusivamente no Google Firebase oficial (olao-potenza-virada-default-rtdb.firebaseio.com), mantendo cache local apenas para tolerância a falhas offline.
    - Botões de Backup e Restauração JSON foram movidos diretamente para a seção de administração do Bolão.
