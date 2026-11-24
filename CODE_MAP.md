@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.17 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.18 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -38,12 +38,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 │   ├── Backup_Versao_O/             # Backup imutável V. 2.15
 │   ├── Backup_Versao_P/             # Backup imutável V. 2.16
 │   ├── Backup_Versao_Q/             # Backup imutável V. 2.17
+│   ├── Backup_Versao_R/             # Backup imutável V. 2.18
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.17)
+## Fluxos de Operação (V. 2.18)
 
-1. **Identificação de Jogo e Participante no Volante Impresso**:
+1. **Correção do Layout de Impressão de Volantes (3 por Folha A4 Paisagem)**:
+   - Configuração formal de orientação Paisagem (@page size: A4 landscape) na impressão de volantes, eliminando quebra prematura de página.
+   - Bloqueio de quebra de linha (flex-wrap: nowrap) na linha de volantes (.a4-slips-row) e fixação dimensional exata de cada volante (83x185mm) com page-break-inside: avoid.
+   - Os 3 volantes (9 jogos) são impressos lado a lado em uma única folha A4 paisagem, com margens e espaçamento centralizado (265mm totais em 297mm de largura).
+   - Impressão de lista de jogos mantém orientação Retrato (@page size: A4 portrait) automaticamente.
+2. **Identificação de Jogo e Participante no Volante Impresso**:
    - Cada volante gerado (SVG 83x185mm) agora inclui identificação milimétrica textual e indelével no topo e nas seções de cada jogo (J1, J2, J3), com o nome do participante em destaque, o número do jogo (#1, #2...) e as 6 dezenas.
    - Textos posicionados em zonas seguras que não interferem nos sensores ópticos da leitora da Caixa.
    - Os cartões de preview na interface e as páginas de impressão A4 agrupadas exibem cabeçalho com nome do participante e identificação completa.

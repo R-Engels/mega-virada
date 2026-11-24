@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.17 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.18 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -894,6 +894,20 @@ function buildSlipsPreview() {
   el.innerHTML = html;
 }
 
+function setPrintOrientation(mode) {
+  let styleEl = document.getElementById('print-orientation-style');
+  if (!styleEl) {
+    styleEl = document.createElement('style');
+    styleEl.id = 'print-orientation-style';
+    document.head.appendChild(styleEl);
+  }
+  if (mode === 'landscape') {
+    styleEl.textContent = `@page { size: A4 landscape; margin: 0; }`;
+  } else {
+    styleEl.textContent = `@page { size: A4 portrait; margin: 6mm; }`;
+  }
+}
+
 function printSlips() {
   if (!state.slipsPayload || !state.slipsPayload.slips.length) {
     buildSlipsPreview();
@@ -901,6 +915,7 @@ function printSlips() {
   const printArea = $('#print-area');
   if (!printArea || !state.slipsPayload) return;
 
+  setPrintOrientation('landscape');
   printArea.innerHTML = PrinterService.renderPrintArea(state.slipsPayload);
   window.print();
 }
@@ -919,6 +934,8 @@ function imprimirListaJogos() {
 
   const printArea = $('#print-area');
   if (!printArea) return;
+
+  setPrintOrientation('portrait');
 
   const dataEmissao = new Date().toLocaleDateString('pt-BR');
   const horaEmissao = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });

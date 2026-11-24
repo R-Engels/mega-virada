@@ -718,13 +718,69 @@ th { color: var(--muted); font-weight: 600; position: sticky; top: 0; background
 .print-only { display: none; }
 
 @media print {
-  body { background: #fff !important; color: #000 !important; margin: 0 !important; }
+  body { background: #fff !important; color: #000 !important; margin: 0 !important; padding: 0 !important; }
   .no-print { display: none !important; }
   .print-only { display: block !important; }
-  .slip-page { page-break-after: always; break-after: page; margin: 0; padding: 0; }
-  .slip-page:last-child { page-break-after: auto; break-after: auto; }
-  .a4-grid-page { padding: 8mm; }
-  .a4-slips-row { display: flex; flex-wrap: wrap; gap: 8mm; align-items: flex-start; }
+
+  /* Impressão dos Volantes Ópticos em Folha A4 Paisagem (Até 3 volantes por folha) */
+  .slip-page {
+    width: 297mm !important;
+    height: 210mm !important;
+    max-height: 210mm !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    padding: 10mm 12mm !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .slip-page:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
+  }
+  .a4-grid-page {
+    padding: 8mm 12mm !important;
+  }
+  .a4-slips-row {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8mm !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .slip-card {
+    width: 83mm !important;
+    height: 185mm !important;
+    max-width: 83mm !important;
+    max-height: 185mm !important;
+    box-sizing: border-box !important;
+    flex: 0 0 83mm !important;
+    flex-shrink: 0 !important;
+    border: 1px dashed #94a3b8 !important;
+    box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    background: #fff !important;
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .slip-card svg.slip-svg {
+    width: 83mm !important;
+    height: 185mm !important;
+    max-width: 83mm !important;
+    max-height: 185mm !important;
+    display: block !important;
+  }
+
   .bolao-print-table { width: 100%; border-collapse: collapse; font-size: 10pt; color: #000; }
   .bolao-print-table th, .bolao-print-table td { border: 1px solid #333; padding: 4px 6px; background: #fff !important; color: #000 !important; }
   .print-games-sheet { padding: 4mm !important; }

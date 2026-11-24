@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.17 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.18 (Nuvem 24h Padrão)
  * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (83x185mm)
  * Com identificação visual de participante e número do jogo no volante impresso
  */
