@@ -1304,6 +1304,125 @@ tr.row-cota-alerta {
   background: #e2e8f0;
 }
 
+/* Painéis temáticos e melhorias de contraste no Tema Claro (V. 2.28) */
+.sorteio-actions-box {
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--quadrant-box-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.conferencia-panel {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background: var(--quadrant-box-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.conf-visual-board {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(6, 78, 59, 0.35);
+  border: 1px solid #059669;
+  border-radius: 8px;
+}
+.conf-board-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #a7f3d0;
+}
+.btn-info-outline {
+  border-color: #38bdf8 !important;
+  color: #38bdf8 !important;
+}
+
+[data-theme="light"] {
+  --muted: #475569;
+  --border: #cbd5e1;
+}
+[data-theme="light"] input,
+[data-theme="light"] select,
+[data-theme="light"] textarea {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #64748b;
+}
+[data-theme="light"] .btn-ghost {
+  background: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+[data-theme="light"] .btn-ghost:hover {
+  background: #f1f5f9;
+  border-color: #94a3b8;
+}
+[data-theme="light"] .btn-info-outline {
+  background: #f0f9ff !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .btn-info-outline:hover {
+  background: #e0f2fe !important;
+}
+[data-theme="light"] .sorteio-actions-box,
+[data-theme="light"] .conferencia-panel {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+[data-theme="light"] .conf-visual-board {
+  background: #ecfdf5;
+  border-color: #10b981;
+}
+[data-theme="light"] .conf-board-label {
+  color: #065f46;
+}
+[data-theme="light"] .part-quota-box {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+[data-theme="light"] .quota-tag {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+[data-theme="light"] .quota-tag.active {
+  background: #e0f2fe;
+  color: #0369a1;
+  border-color: #38bdf8;
+}
+[data-theme="light"] .quota-tag.complete {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #22c55e;
+}
+[data-theme="light"] .cotas-control {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+[data-theme="light"] .backtesting-panel {
+  background: #f8fafc;
+  border-color: #0284c7;
+}
+[data-theme="light"] .bt-header strong {
+  color: #0369a1 !important;
+}
+[data-theme="light"] .bt-kpi.quina {
+  border-color: #0284c7;
+}
+[data-theme="light"] .bt-kpi.quina .bt-val {
+  color: #0369a1;
+}
+[data-theme="light"] .badge {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
 /* Backtesting Histórico & Fechamentos Matemáticos (V. 2.26) */
 .backtesting-panel {
   margin-top: 12px;

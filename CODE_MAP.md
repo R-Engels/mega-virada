@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.27 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
+﻿﻿<!-- Versão: V. 2.28 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -48,12 +48,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_Y/             # Backup imutável V. 2.25
 ├── Backup_Versao_Z/             # Backup imutável V. 2.26
 ├── Backup_Versao_AA/            # Backup imutável V. 2.27
+├── Backup_Versao_AB/            # Backup imutável V. 2.28
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.27)
+## Fluxos de Operação (V. 2.28)
 
-1. **Cálculo Automático do Valor Oficial Caixa por Jogo e Cota**:
+1. **Ajuste de Contraste e Legibilidade no Tema Claro (`[data-theme="light"]`)**:
+   - Removidos fundos escuros fixos (`rgba(15,23,42,...)`) de `.sorteio-actions-box`, `.conferencia-panel` e `#conf-visual-board`, substituídos por classes temáticas responsivas.
+   - Contraste reforçado em inputs, placeholders, `.btn-ghost`, `.btn-info-outline` (Backtesting), `.part-quota-box`, `.cotas-control`, `.badge` e painel de Backtesting no tema claro.
+2. **Cálculo Automático do Valor Oficial Caixa por Jogo e Cota**:
    - Alterar `Números por Jogo (6 a 20)` (`#bolao-cfg-dezenas`) preenche automaticamente `Valor por Jogo (R$)` com o valor oficial Caixa (`StatsEngine.getBetPrice`, ex: 6=R$ 6,00, 7=R$ 42,00, 8=R$ 168,00...) e recalcula `Valor da Cota (R$)` (`valor_jogo × jogos_por_cota`).
    - Alterar `Jogos por Participante/Cota` ou `Valor por Jogo` também recalcula `Valor da Cota` em tempo real.
 2. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:
