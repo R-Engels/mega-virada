@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.31 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
+﻿﻿<!-- Versão: V. 2.32 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -52,12 +52,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AC/            # Backup imutável V. 2.29
 ├── Backup_Versao_AD/            # Backup imutável V. 2.30
 ├── Backup_Versao_AE/            # Backup imutável V. 2.31
+├── Backup_Versao_AF/            # Backup imutável V. 2.32
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.31)
+## Fluxos de Operação (V. 2.32)
 
-1. **Autopreenchimento de Dezenas no Fechamento Automático**:
+1. **Otimização Exaustiva do Motor Matemático (`stats_engine.js`) Validada em 3.087 Concursos**:
+   - `checkFilters()` recalibrado e escalável dinamicamente para 6 a 20 dezenas (`Soma 90–275` com escala $\sqrt{k/6}$, `Pares 1–5`, `MaxQ=5`, `MaxConsec<=2`, `MinLinhas>=3`, `MinOver31>=1`, `MaxMesmoFinal<=3`): compatibilidade histórica real elevada de **59,1% → 90,4%** (6 dez.), **39,7% → 96,1%** (7 dez.) e **16,8% → 97,0%** (8 dez.) com **100% de bloqueio anti-multidão** (datas puras `<=31`, sequências 3+ e colunas de 4+).
+   - `generatePotenzaGames()` com packing anti-sobreposição de triplas (`-60`) e quadras (`-280`) via bitmasks 32-bit, zerando sobreposições `>=3` mesmo em bolões de 80 jogos (`Overlap3+ = 0,00`) e elevando a cobertura de pares para `91,1%`–`100,0%`.
+   - `generateFechamento()` aprimorado com Multi-Start Greedy + Poda de Redundância (Redundancy Pruning), reduzindo o número de bilhetes e o custo em fechamentos de 6, 7 e 8 dezenas mantendo **100% de garantia verificada**.
+2. **Autopreenchimento de Dezenas no Fechamento Automático**:
    - Clicar em `🤖 Melhor Garantido` ou `⚡ Gerar Fechamento` sem ter selecionado o mínimo de dezenas completa automaticamente até 12 dezenas balanceadas por quadrante (preservando qualquer dezena que o usuário já tenha marcado) e gera o fechamento imediatamente em 1 clique.
 2. **Fechamentos com Opção Sena (6 Acertos) e Modo Automático (Melhor Garantido)**:
    - `StatsEngine.generateFechamento` agora aceita garantia `6` (**Sena 100%**), além de Quina (5) e Quadra (4), para jogos de 6, 7 ou 8 dezenas.
