@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.33 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.34 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1858,7 +1858,7 @@ function renderFechamentoOutput(res, comparativo = null) {
       <div class="kpi">
         <div class="label">Garantia (${garantiaLabel(res.garantia)})</div>
         <div class="value" style="color:var(--accent)">${res.cobertura_pct}%</div>
-        <div class="sub-label">${res.verificacao_exata ? `${res.cenarios_testados.toLocaleString('pt-BR')} cenários verificados` : 'Amostra 4.000 cenários'}</div>
+        <div class="sub-label">${res.cobertura_m5_pct != null ? `Acerto 5→Q4: ${res.cobertura_m5_pct}% · 4→Q4: ${res.cobertura_m4_pct}%` : (res.verificacao_exata ? `${res.cenarios_testados.toLocaleString('pt-BR')} cenários verificados` : 'Amostra 4.000 cenários')}</div>
       </div>
     `;
   }

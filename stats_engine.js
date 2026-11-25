@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.33 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.34 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -779,41 +779,41 @@ const StatsEngine = (() => {
     return out;
   }
 
-  // Catálogo de 39 matrizes canônicas otimizadas via Simulated Annealing (100% verificadas sobre todos os C(v,6) sorteios)
+  // Catálogo de 39 matrizes canônicas Dual-Otimizadas (100% garantia m=6 + cobertura máxima m=4/m=5 via SA)
   const OPTIMAL_COVERING_MATRICES = {
-    '9_6_4': [63,455,123],
-    '10_6_4': [63,963,252],
-    '11_6_4': [63,1985,126,1926,441],
+    '9_6_4': [190,455,377],
+    '10_6_4': [444,965,603],
+    '11_6_4': [946,1985,126,1593,1167],
     '12_6_4': [63,1985,2254,3888,2289,1806],
-    '13_6_4': [63,1477,6279,6984,7458,1644,6384,1619,937,1690,6421],
+    '13_6_4': [63,1477,6279,6984,7458,1644,6384,1619,937,1690,7444],
     '14_6_4': [1985,14406,6552,11816,12976,5383,8562,1244,6787,11537,9060,9386,7280,4427,2221,543],
-    '15_6_4': [16415,1761,15620,10696,28848,5460,10298,19745,26124,9365,20684,3207,952,2662,17298,6681,8549,19538,5418,12867,21377],
-    '16_6_4': [33039,7329,26192,25056,54020,14358,51352,41603,44289,37992,17493,13450,18985,4564,948,3378,1566,61474,32883,50340,10444,8537,47680,3174,22856,22659,12844,963,18186,37649],
-    '8_6_5': [63,207,243,125],
-    '9_6_5': [455,504,335,444,411,207,119],
-    '10_6_5': [111,907,881,694,476,791,243,940,634,717,486,441,63,858],
+    '15_6_4': [16415,1761,15620,10696,28848,5460,10298,19745,26124,9365,20684,3207,952,2662,17298,6681,8549,19538,5418,12867,23297],
+    '16_6_4': [33039,7329,26192,25056,54020,14358,51352,41603,44289,37992,17493,13450,18985,4564,948,3378,1566,61474,32883,50340,10444,24857,47680,3174,22856,22659,12844,963,18186,37401],
+    '8_6_5': [63,207,243,252],
+    '9_6_5': [455,504,335,444,315,207,119],
+    '10_6_5': [111,907,881,694,476,791,243,813,760,717,486,441,63,858],
     '11_6_5': [95,1191,811,1433,965,700,1738,1649,1388,1814,498,667,1257,1805,462,615,888,437,1954,1086,1363,1748],
-    '12_6_5': [303,1607,2251,3123,693,2841,1182,2950,1489,2668,3496,3792,1705,1803,1254,2205,2277,1145,3717,3149,970,599,667,2390,3634,972,2913,3402,483,634,3380,1820,2606,1842,504,3461,343,2730,1892,2482],
-    '10_7_4': [127,911,247],
-    '11_7_4': [127,1927,505],
-    '12_7_4': [127,3971,508,637],
-    '13_7_4': [127,8065,254,7942,1912],
+    '12_6_5': [303,1607,2251,3123,693,2841,1182,2950,1489,2668,3496,3792,1705,1803,1254,2205,2277,1145,3717,3149,1986,599,667,2390,3634,972,2913,3402,483,634,3380,1820,2606,1842,504,3461,343,2730,1892,2482],
+    '10_7_4': [875,439,988],
+    '11_7_4': [487,1627,1976],
+    '12_7_4': [1863,3824,415,2862],
+    '13_7_4': [127,8065,254,7942,5496],
     '14_7_4': [12161,7310,12658,877,11888,4763,925,12391],
-    '15_7_4': [431,13906,14520,20961,19022,25629,3554,11156,29203,1769,22306,7245],
-    '16_7_4': [1651,8065,30218,49784,52268,4582,57925,37021,10601,51475,1498,55408,10894,58530,14100],
-    '10_7_5': [127,911,1009,254,382],
+    '15_7_4': [431,13906,14520,20961,19022,25629,3554,11156,29203,1769,22306,7493],
+    '16_7_4': [1651,8065,30218,50088,52268,4582,57925,37021,10601,51475,1498,55408,10894,58530,14100],
+    '10_7_5': [127,911,1009,758,382],
     '11_7_5': [859,1763,1948,1912,1383,997,1246,443,1245,575],
-    '12_7_5': [127,1927,3056,3275,3444,3635,2893,3292,1491,2478,757,1882,3229,1961,2867,3686,702],
-    '13_7_5': [575,3463,6505,4540,3659,5306,1395,2986,2522,5717,5422,5011,1497,2932,4327,6797,7960,7730,1957,6881,4942,7620,1750,6175,3308,5752,3253],
+    '12_7_5': [127,1927,3056,3275,3444,3635,2893,1246,1491,2478,757,1882,3229,1961,2867,3686,702],
+    '13_7_5': [575,3463,6505,4540,3659,5291,1395,2986,6362,5717,5422,5011,1497,2932,4327,6797,7960,7730,1957,6881,4942,7620,1750,2335,3308,5752,3253],
     '9_7_6': [127,415,487,505,254,382,431,463,439,471,251,379,253,381,506,508],
     '10_7_6': [799,223,491,979,877,631,702,382,988,953,998,253,747,911,890,1009,847,815,981,379,506,477,743,947,733,494,734,764,923,191,487,829,941,919,635,1002,375,502,985,886,949,755,623,995,446],
-    '11_8_4': [255,1823,495],
-    '12_8_4': [255,3855,1011],
-    '13_8_4': [255,7943,2040],
-    '14_8_4': [255,16131,1020,3324],
-    '15_8_4': [255,32513,19398,13436,3002,21647],
-    '16_8_4': [255,46977,27917,55920,59268,15418,49995,6606],
-    '11_8_5': [255,1823,2019,1020],
+    '11_8_4': [999,1949,1914],
+    '12_8_4': [1278,3855,3057],
+    '13_8_4': [4006,7002,5245],
+    '14_8_4': [255,16131,1020,15544],
+    '15_8_4': [255,32513,19398,13436,11066,21675],
+    '16_8_4': [255,46753,27925,55920,59268,15418,49995,6606],
+    '11_8_5': [1515,2006,639,1469],
     '12_8_5': [2623,2036,383,3735,4072,3555,863,3231],
     '13_8_5': [2301,7695,3960,5049,7374,1974,6331,7877,3389,4982,3019,5491,7621],
     '14_8_5': [1247,7943,10092,14684,13282,11493,5806,7286,10035,3001,12917,11722,7593,10910,15945,6100,8623,13434,14739,2907],
@@ -841,17 +841,66 @@ const StatsEngine = (() => {
       throw new Error('Selecione no máximo 20 dezenas para o fechamento matemático.');
     }
 
-    // Fast-path: matriz canônica recorde pré-otimizada via Simulated Annealing (0.1ms, 100% verificada)
+    // Otimização de permutação isomórfica pi* (preserva 100% garantia matemática e eleva qualidade real dos bilhetes)
+    const mapWithOptimalPermutation = (canonicalMasks) => {
+      const evalPerm = (permNums) => {
+        let fPass = 0, anti = 0;
+        for (let i = 0; i < canonicalMasks.length; i++) {
+          const m = canonicalMasks[i];
+          const arr = [];
+          for (let b = 0; b < v; b++) if (m & (1 << b)) arr.push(permNums[b]);
+          arr.sort((a, b) => a - b);
+          if (checkFilters(arr, null)) fPass++;
+          for (let x = 0; x < arr.length; x++) if (arr[x] > 31) anti++;
+        }
+        return fPass * 100 + anti;
+      };
+
+      // Intercala quadrantes (Q1, Q4, Q2, Q3) para quebrar clusters baixo/alto
+      const byQ = { 1: [], 2: [], 3: [], 4: [] };
+      nums.forEach((n) => byQ[getQuadrant(n)].push(n));
+      const interleaved = [];
+      const qOrd = [1, 4, 2, 3];
+      for (let idx = 0; interleaved.length < v; idx++) {
+        const q = qOrd[idx % 4];
+        if (byQ[q].length) interleaved.push(byQ[q].shift());
+      }
+
+      let bestPerm = nums.slice();
+      let bestScore = evalPerm(bestPerm);
+      const intScore = evalPerm(interleaved);
+      if (intScore > bestScore) { bestScore = intScore; bestPerm = interleaved; }
+
+      let pSeed = v * 7919 + canonicalMasks.length * 131 + nums[0] * 17;
+      const pRand = () => { pSeed = (pSeed * 1664525 + 1013904223) >>> 0; return pSeed / 4294967296; };
+      for (let r = 0; r < 60; r++) {
+        const cand = r < 25 ? bestPerm.slice() : nums.slice();
+        if (r < 25) {
+          const i = Math.floor(pRand() * v);
+          const j = Math.floor(pRand() * v);
+          const tmp = cand[i]; cand[i] = cand[j]; cand[j] = tmp;
+        } else {
+          for (let i = v - 1; i > 0; i--) {
+            const j = Math.floor(pRand() * (i + 1));
+            const tmp = cand[i]; cand[i] = cand[j]; cand[j] = tmp;
+          }
+        }
+        const sc = evalPerm(cand);
+        if (sc > bestScore) { bestScore = sc; bestPerm = cand; }
+      }
+
+      return canonicalMasks.map((mask) => {
+        const arr = [];
+        for (let i = 0; i < v; i++) if (mask & (1 << i)) arr.push(bestPerm[i]);
+        return arr.sort((a, b) => a - b);
+      });
+    };
+
+    // Fast-path: matriz canônica Dual-Otimizada (100% m=6 + cobertura máxima m=4/m=5 + permutação ótima pi*)
     const catKey = `${v}_${betSize}_${targetHit}`;
     if (OPTIMAL_COVERING_MATRICES[catKey]) {
       const optMasks = OPTIMAL_COVERING_MATRICES[catKey];
-      const jogos = optMasks.map((mask) => {
-        const arr = [];
-        for (let i = 0; i < v; i++) {
-          if (mask & (1 << i)) arr.push(nums[i]);
-        }
-        return arr;
-      });
+      const jogos = mapWithOptimalPermutation(optMasks);
       const combTotal = combInt(v, betSize);
       const totalC6 = combInt(v, condicao);
       const custoUnitario = getBetPrice(betSize, basePrice6);
@@ -860,6 +909,22 @@ const StatsEngine = (() => {
       const economiaPct = custoMultiplaDireta > 0
         ? Math.max(0, Math.round((1 - custoTotal / custoMultiplaDireta) * 1000) / 10)
         : 0;
+      // Calcula cobertura exata de acertos parciais m=4 (Quadra) e m=5 (Quadra) para exibição transparente
+      let cobM4 = null, cobM5 = null;
+      if (v <= 16) {
+        const t4 = genBitmasks(v, 4);
+        let c4 = 0;
+        for (let i = 0; i < t4.length; i++) {
+          for (let j = 0; j < optMasks.length; j++) if (popcount32(optMasks[j] & t4[i]) >= 4) { c4++; break; }
+        }
+        cobM4 = Math.round((c4 / t4.length) * 1000) / 10;
+        const t5 = genBitmasks(v, 5);
+        let c5 = 0;
+        for (let i = 0; i < t5.length; i++) {
+          for (let j = 0; j < optMasks.length; j++) if (popcount32(optMasks[j] & t5[i]) >= 4) { c5++; break; }
+        }
+        cobM5 = Math.round((c5 / t5.length) * 1000) / 10;
+      }
       return {
         dezenas_selecionadas: nums,
         v,
@@ -874,6 +939,8 @@ const StatsEngine = (() => {
         custo_multipla_direta: custoMultiplaDireta,
         economia_pct: economiaPct,
         cobertura_pct: 100,
+        cobertura_m4_pct: cobM4,
+        cobertura_m5_pct: cobM5,
         verificacao_exata: true,
         cenarios_testados: totalC6,
         matriz_otima: true,

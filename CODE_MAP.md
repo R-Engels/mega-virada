@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.33 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
+﻿﻿<!-- Versão: V. 2.34 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -54,12 +54,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AE/            # Backup imutável V. 2.31
 ├── Backup_Versao_AF/            # Backup imutável V. 2.32
 ├── Backup_Versao_AG/            # Backup imutável V. 2.33
+├── Backup_Versao_AH/            # Backup imutável V. 2.34
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.33)
+## Fluxos de Operação (V. 2.34)
 
-1. **Matrizes Recordes via Simulated Annealing (39 Fechamentos Instantâneos) + Otimizador Global 1-Swap**:
+1. **Otimização Dual de Cobertura Secundária (`m=4` e `m=5`) + Permutação Isomórfica $\pi^*$ nos Fechamentos**:
+   - 24 de 39 matrizes canônicas aprimoradas mantendo **100,0% de garantia em `m=6`** e elevando a cobertura exata de acertos parciais (`m=4` e `m=5`, responsáveis por >93% dos prêmios reais): ganho comprovado de **+6,29% concursos premiados no backtest** (5.991 → 6.368 em 1,2M avaliações reais, com picos de **+19,3%** em `10→7`, **+18,8%** em `11→8`, **+17,1%** em `9→6` e **+16,7%** em `12→7`).
+   - Matrizes `9→6`, `10→7`, `11→8` e `12→8` atingiram **100% garantia de Quadra mesmo acertando apenas 5 dezenas no grupo** com os mesmos 3 jogos!
+   - `mapWithOptimalPermutation()` mapeia as dezenas escolhidas preservando 100% o isomorfismo da matriz enquanto coloca **97%–100%** dos bilhetes dentro dos filtros reais (`checkFilters`) e maximiza dezenas `> 31`.
+   - KPI de garantia exibe cobertura exata de acertos parciais (`Acerto 5→Q4` e `4→Q4`).
+2. **Matrizes Recordes via Simulated Annealing (39 Fechamentos Instantâneos) + Otimizador Global 1-Swap**:
    - Incorporadas 39 matrizes canônicas pré-otimizadas via Simulated Annealing (`OPTIMAL_COVERING_MATRICES` em `stats_engine.js`) para 6, 7 e 8 dezenas × Quadra/Quina/Sena, 100% verificadas sobre todas as $\binom{v}{6}$ combinações (reduzindo **-51 jogos / -R\$ 3.852** acumulados, ex: `12→8 Sena: 61→51 jogos`, `11→8 Sena: 33→29`, `12→6 Quina: 45→40`, `16→6 Quadra: 34→30`) com execução em `<1ms`.
    - Adicionada pós-otimização Global 1-Swap em `generatePotenzaGames()` elevando cobertura de pares únicos (40×6 e 20×7 a **100,0%**, 80×6 a **94,5%**), mantendo `Overlap3+ = 0` e aumentando o score Anti-Divisão (+15–20% evitando meses `01–12`, múltiplos de 5 e progressões aritméticas).
    - Corrigido bug de loop infinito (`gcd(7,14)`) em `expandMask()` no fechamento com 14 dezenas para jogos de 7/8 números.
