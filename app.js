@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.30 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.31 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1886,12 +1886,32 @@ window.selecionarOpcaoFechamento = function (k, garantia) {
   gerarFechamentoUi();
 };
 
-function gerarMelhorFechamentoAuto() {
-  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
-  if (nums.length < 7) {
-    toast('Selecione pelo menos 7 dezenas no volante acima para calcular o melhor fechamento.', true);
-    return;
+function autoCompletarDezenasFechamento(alvoQtd = 12) {
+  const scored = StatsEngine.scoreNumbers(state.concursos || [], 100);
+  const byQ = { 1: [], 2: [], 3: [], 4: [] };
+  scored
+    .slice()
+    .sort((a, b) => b.score - a.score)
+    .forEach((x) => {
+      if (!state.fechamentoSelected.has(x.dezena)) {
+        byQ[StatsEngine.getQuadrant(x.dezena)].push(x.dezena);
+      }
+    });
+  let idx = 0;
+  while (state.fechamentoSelected.size < alvoQtd && idx < 120) {
+    const q = (idx % 4) + 1;
+    const next = byQ[q].shift();
+    if (next) state.fechamentoSelected.add(next);
+    idx++;
   }
+  renderFechamentoPicker();
+}
+
+function gerarMelhorFechamentoAuto() {
+  if (state.fechamentoSelected.size < 7) {
+    autoCompletarDezenasFechamento(12);
+  }
+  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
   try {
     const { best, comparativo } = StatsEngine.generateBestFechamento(nums, 6.0);
     const kEl = $('#fech-bet-size');
@@ -1899,7 +1919,7 @@ function gerarMelhorFechamentoAuto() {
     if (kEl) kEl.value = String(best.k);
     if (gEl) gEl.value = String(best.garantia);
     renderFechamentoOutput(best, comparativo);
-    toast(`Melhor garantido: ${best.total_jogos} jogos de ${best.k} dez. (${garantiaLabel(best.garantia)} ${best.cobertura_pct}%).`);
+    toast(`Melhor garantido (${nums.length} dez.): ${best.total_jogos} jogos de ${best.k} dez. (${garantiaLabel(best.garantia)} ${best.cobertura_pct}%).`);
   } catch (err) {
     toast(err.message || 'Erro no cálculo automático.', true);
   }
@@ -1908,12 +1928,10 @@ function gerarMelhorFechamentoAuto() {
 function gerarFechamentoUi() {
   const k = parseInt($('#fech-bet-size')?.value, 10) || 6;
   const garantia = parseInt($('#fech-garantia')?.value, 10) || 4;
-  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
-
-  if (nums.length <= k) {
-    toast(`Selecione pelo menos ${k + 1} dezenas no volante acima para fechar jogos de ${k} números.`, true);
-    return;
+  if (state.fechamentoSelected.size <= k) {
+    autoCompletarDezenasFechamento(Math.max(12, k + 4));
   }
+  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
 
   try {
     const res = StatsEngine.generateFechamento(nums, k, garantia, 6.0);
