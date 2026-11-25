@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.29 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.30 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -589,7 +589,7 @@ const StatsEngine = (() => {
   }
 
   // Fechamentos Matemáticos (Covering Design C(v, k, t, m=6))
-  // Suporta jogos de 6, 7 ou 8 dezenas por jogo (k = 6, 7, 8) com garantia de Quadra (4) ou Quina (5)
+  // Suporta jogos de 6, 7 ou 8 dezenas por jogo (k = 6, 7, 8) com garantia de Quadra (4), Quina (5) ou Sena (6)
   function generateFechamento(selectedNums, k = 6, garantia = 4, basePrice6 = 6.0) {
     const nums = Array.from(
       new Set((selectedNums || []).map((n) => parseInt(n, 10)).filter((n) => n >= 1 && n <= 60))
@@ -597,7 +597,7 @@ const StatsEngine = (() => {
 
     const v = nums.length;
     const betSize = Math.max(6, Math.min(8, parseInt(k, 10) || 6));
-    const targetHit = Math.max(4, Math.min(5, parseInt(garantia, 10) || 4));
+    const targetHit = Math.max(4, Math.min(6, parseInt(garantia, 10) || 4));
     const condicao = 6;
 
     if (v <= betSize) {
@@ -605,6 +605,44 @@ const StatsEngine = (() => {
     }
     if (v > 20) {
       throw new Error('Selecione no máximo 20 dezenas para o fechamento matemático.');
+    }
+
+    // Caso especial: Sena garantida com jogos de 6 dezenas exige todas as C(v, 6) combinações
+    if (targetHit === 6 && betSize === 6) {
+      const totalC6 = combInt(v, 6);
+      if (totalC6 > 250) {
+        throw new Error(`Fechamento 100% Sena com jogos de 6 dezenas para ${v} números exige ${totalC6.toLocaleString('pt-BR')} jogos. Use 7/8 dezenas por jogo, escolha até 10 dezenas, ou selecione Quina/Quadra.`);
+      }
+      const allMasks = genBitmasks(v, 6);
+      const jogos = allMasks.map((mask) => {
+        const arr = [];
+        for (let i = 0; i < v; i++) if (mask & (1 << i)) arr.push(nums[i]);
+        return arr;
+      });
+      const custoUnitario = getBetPrice(6, basePrice6);
+      const custoTotal = Math.round(jogos.length * custoUnitario * 100) / 100;
+      const custoMultiplaDireta = getBetPrice(v, basePrice6);
+      return {
+        dezenas_selecionadas: nums,
+        v,
+        k: 6,
+        garantia: 6,
+        condicao,
+        jogos,
+        total_jogos: jogos.length,
+        comb_total: totalC6,
+        custo_unitario: custoUnitario,
+        custo_total: custoTotal,
+        custo_multipla_direta: custoMultiplaDireta,
+        economia_pct: 0,
+        cobertura_pct: 100,
+        verificacao_exata: true,
+        cenarios_testados: totalC6,
+      };
+    }
+
+    if (targetHit === 6 && v > 13) {
+      throw new Error(`Fechamento 100% Sena para ${v} dezenas gera combinações muito altas. Para 14+ dezenas, use garantia de Quina (5) ou Quadra (4), ou use o modo Automático.`);
     }
 
     // Gera conjunto de alvos (combinações de 6 dezenas dentre as v escolhidas)
@@ -648,7 +686,7 @@ const StatsEngine = (() => {
     let uncovered = targets.slice();
     const chosenMasks = [];
     const chosenSet = new Set();
-    const maxGames = 180;
+    const maxGames = 220;
 
     // Helper para expandir uma máscara de 6 bits para betSize bits (para k=7 ou k=8)
     const expandMask = (baseMask, salt) => {
@@ -767,6 +805,68 @@ const StatsEngine = (() => {
     };
   }
 
+  // Modo Automático: avalia combinações de 6/7/8 dezenas × Sena/Quina/Quadra e escolhe o melhor fechamento garantido
+  function generateBestFechamento(selectedNums, basePrice6 = 6.0) {
+    const nums = Array.from(
+      new Set((selectedNums || []).map((n) => parseInt(n, 10)).filter((n) => n >= 1 && n <= 60))
+    ).sort((a, b) => a - b);
+
+    const v = nums.length;
+    if (v < 7) {
+      throw new Error('Selecione pelo menos 7 dezenas para o cálculo automático do melhor fechamento.');
+    }
+    if (v > 20) {
+      throw new Error('Selecione no máximo 20 dezenas.');
+    }
+
+    const ks = [6, 7, 8].filter((k) => k < v);
+    const garantias = [6, 5, 4];
+    const avaliados = [];
+
+    for (const g of garantias) {
+      // Evita cálculos explosivos para Sena com muitas dezenas no modo automático
+      if (g === 6 && v > 11) continue;
+      if (g === 5 && v > 16) continue;
+      for (const k of ks) {
+        if (g === 6 && k === 6 && combInt(v, 6) > 84) continue;
+        try {
+          const res = generateFechamento(nums, k, g, basePrice6);
+          if (res.cobertura_pct >= 99.5) {
+            avaliados.push(res);
+          }
+        } catch (e) {}
+      }
+    }
+
+    if (!avaliados.length) {
+      const fallback = generateFechamento(nums, 6, 4, basePrice6);
+      return { best: fallback, comparativo: [fallback] };
+    }
+
+    // Critério de seleção do melhor garantido:
+    // 1. Filtra opções viáveis (<= 50 jogos e que economizam ou igualam a múltipla direta)
+    // 2. Entre as viáveis, prioriza MAIOR garantia (Sena > Quina > Quadra), e na mesma garantia o MENOR custo total
+    const viaveis = avaliados.filter(
+      (r) => r.total_jogos <= 50 && r.custo_total <= r.custo_multipla_direta
+    );
+    const pool = viaveis.length ? viaveis : avaliados;
+
+    pool.sort((a, b) => {
+      if (b.garantia !== a.garantia) return b.garantia - a.garantia;
+      if (a.custo_total !== b.custo_total) return a.custo_total - b.custo_total;
+      return a.total_jogos - b.total_jogos;
+    });
+
+    const best = pool[0];
+    // Ordena comparativo para exibição (maior garantia -> menor custo)
+    const comparativo = avaliados
+      .slice()
+      .sort((a, b) => (b.garantia !== a.garantia ? b.garantia - a.garantia : a.custo_total - b.custo_total))
+      .slice(0, 6);
+
+    return { best, comparativo };
+  }
+
   return {
     getQuadrant,
     getBetPrice,
@@ -778,6 +878,7 @@ const StatsEngine = (() => {
     getExcelHeatmapColor,
     runBacktesting,
     generateFechamento,
+    generateBestFechamento,
   };
 })();
 

@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.29 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.30 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1537,6 +1537,7 @@ function bindEvents() {
     const box = $('#fech-results-box');
     if (box) box.style.display = 'none';
   });
+  $('#btn-fech-auto')?.addEventListener('click', gerarMelhorFechamentoAuto);
   $('#btn-fech-gerar')?.addEventListener('click', gerarFechamentoUi);
   $('#btn-fech-add-bolao')?.addEventListener('click', adicionarFechamentoAoBolao);
   $('#btn-fech-backtest')?.addEventListener('click', testarFechamentoBacktesting);
@@ -1772,6 +1773,138 @@ function sugerirFechamento(qtd, mode) {
   toast(`${state.fechamentoSelected.size} dezenas sugeridas (${mode === 'quentes' ? 'mais sorteadas' : 'balanceadas'}).`);
 }
 
+function garantiaLabel(g) {
+  return g === 6 ? 'Sena' : g === 5 ? 'Quina' : 'Quadra';
+}
+
+function renderFechamentoOutput(res, comparativo = null) {
+  state.fechamentoResult = res;
+
+  const box = $('#fech-results-box');
+  const kpis = $('#fech-kpis');
+  const list = $('#fech-games-list');
+  const btBox = $('#fech-backtesting-box');
+  const cmpBox = $('#fech-auto-compare');
+  if (btBox) btBox.style.display = 'none';
+  if (box) box.style.display = 'block';
+
+  if (cmpBox) {
+    if (comparativo && comparativo.length) {
+      cmpBox.style.display = 'block';
+      const rows = comparativo
+        .map((c) => {
+          const isBest = c.k === res.k && c.garantia === res.garantia;
+          return `
+            <tr style="${isBest ? 'background:rgba(16,185,129,0.14);font-weight:700' : ''}">
+              <td>${isBest ? '⭐ ' : ''}${c.k} dez./jogo · <b>${garantiaLabel(c.garantia)} (${c.garantia})</b></td>
+              <td style="text-align:center">${c.total_jogos} jogos</td>
+              <td style="text-align:right">R$ ${c.custo_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
+              <td style="text-align:center">${c.economia_pct}%</td>
+              <td style="text-align:center">${c.cobertura_pct}%</td>
+              <td style="text-align:center">
+                <button class="btn btn-sm ${isBest ? 'btn-primary' : 'btn-ghost'}" onclick="selecionarOpcaoFechamento(${c.k}, ${c.garantia})">
+                  ${isBest ? 'Ativo' : 'Usar'}
+                </button>
+              </td>
+            </tr>
+          `;
+        })
+        .join('');
+      cmpBox.innerHTML = `
+        <div class="backtesting-panel" style="margin-top:0">
+          <div class="bt-header">
+            <strong>🤖 Melhor Garantido Calculado Automaticamente (${res.v} dezenas → ${res.total_jogos} jogos de ${res.k} dez. · ${garantiaLabel(res.garantia)} ${res.cobertura_pct}%)</strong>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Estratégia</th>
+                  <th style="text-align:center">Jogos</th>
+                  <th style="text-align:right">Custo</th>
+                  <th style="text-align:center">Economia</th>
+                  <th style="text-align:center">Garantia</th>
+                  <th style="text-align:center">Ação</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    } else {
+      cmpBox.style.display = 'none';
+      cmpBox.innerHTML = '';
+    }
+  }
+
+  if (kpis) {
+    kpis.innerHTML = `
+      <div class="kpi">
+        <div class="label">Jogos Gerados (${res.k} dez.)</div>
+        <div class="value">${res.total_jogos}</div>
+        <div class="sub-label">vs ${res.comb_total.toLocaleString('pt-BR')} combinações totais</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Custo do Fechamento</div>
+        <div class="value" style="color:var(--accent)">R$ ${res.custo_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        <div class="sub-label">R$ ${res.custo_unitario.toFixed(2)} por jogo de ${res.k} dez.</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Economia vs Múltipla (${res.v} dez.)</div>
+        <div class="value" style="color:var(--warn)">${res.economia_pct}%</div>
+        <div class="sub-label">Múltipla direta: R$ ${res.custo_multipla_direta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+      </div>
+      <div class="kpi">
+        <div class="label">Garantia (${garantiaLabel(res.garantia)})</div>
+        <div class="value" style="color:var(--accent)">${res.cobertura_pct}%</div>
+        <div class="sub-label">${res.verificacao_exata ? `${res.cenarios_testados.toLocaleString('pt-BR')} cenários verificados` : 'Amostra 4.000 cenários'}</div>
+      </div>
+    `;
+  }
+
+  if (list) {
+    list.innerHTML = res.jogos
+      .map((j, idx) => {
+        const balls = j.map((d) => `<span class="ball">${String(d).padStart(2, '0')}</span>`).join('');
+        return `
+          <div class="fech-game-item">
+            <span class="fech-game-idx">#${idx + 1}</span>
+            <div class="fech-game-balls">${balls}</div>
+          </div>
+        `;
+      })
+      .join('');
+  }
+}
+
+window.selecionarOpcaoFechamento = function (k, garantia) {
+  const kEl = $('#fech-bet-size');
+  const gEl = $('#fech-garantia');
+  if (kEl) kEl.value = String(k);
+  if (gEl) gEl.value = String(garantia);
+  gerarFechamentoUi();
+};
+
+function gerarMelhorFechamentoAuto() {
+  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
+  if (nums.length < 7) {
+    toast('Selecione pelo menos 7 dezenas no volante acima para calcular o melhor fechamento.', true);
+    return;
+  }
+  try {
+    const { best, comparativo } = StatsEngine.generateBestFechamento(nums, 6.0);
+    const kEl = $('#fech-bet-size');
+    const gEl = $('#fech-garantia');
+    if (kEl) kEl.value = String(best.k);
+    if (gEl) gEl.value = String(best.garantia);
+    renderFechamentoOutput(best, comparativo);
+    toast(`Melhor garantido: ${best.total_jogos} jogos de ${best.k} dez. (${garantiaLabel(best.garantia)} ${best.cobertura_pct}%).`);
+  } catch (err) {
+    toast(err.message || 'Erro no cálculo automático.', true);
+  }
+}
+
 function gerarFechamentoUi() {
   const k = parseInt($('#fech-bet-size')?.value, 10) || 6;
   const garantia = parseInt($('#fech-garantia')?.value, 10) || 4;
@@ -1784,55 +1917,8 @@ function gerarFechamentoUi() {
 
   try {
     const res = StatsEngine.generateFechamento(nums, k, garantia, 6.0);
-    state.fechamentoResult = res;
-
-    const box = $('#fech-results-box');
-    const kpis = $('#fech-kpis');
-    const list = $('#fech-games-list');
-    const btBox = $('#fech-backtesting-box');
-    if (btBox) btBox.style.display = 'none';
-    if (box) box.style.display = 'block';
-
-    if (kpis) {
-      kpis.innerHTML = `
-        <div class="kpi">
-          <div class="label">Jogos Gerados (${res.k} dez.)</div>
-          <div class="value">${res.total_jogos}</div>
-          <div class="sub-label">vs ${res.comb_total.toLocaleString('pt-BR')} combinações totais</div>
-        </div>
-        <div class="kpi">
-          <div class="label">Custo do Fechamento</div>
-          <div class="value" style="color:var(--accent)">R$ ${res.custo_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div class="sub-label">R$ ${res.custo_unitario.toFixed(2)} por jogo de ${res.k} dez.</div>
-        </div>
-        <div class="kpi">
-          <div class="label">Economia vs Múltipla (${res.v} dez.)</div>
-          <div class="value" style="color:var(--warn)">${res.economia_pct}%</div>
-          <div class="sub-label">Múltipla direta: R$ ${res.custo_multipla_direta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-        </div>
-        <div class="kpi">
-          <div class="label">Garantia (${res.garantia === 5 ? 'Quina' : 'Quadra'})</div>
-          <div class="value" style="color:var(--accent)">${res.cobertura_pct}%</div>
-          <div class="sub-label">${res.verificacao_exata ? 'Verificação matemática exata' : 'Amostra 4.000 cenários'}</div>
-        </div>
-      `;
-    }
-
-    if (list) {
-      list.innerHTML = res.jogos
-        .map((j, idx) => {
-          const balls = j.map((d) => `<span class="ball">${String(d).padStart(2, '0')}</span>`).join('');
-          return `
-            <div class="fech-game-item">
-              <span class="fech-game-idx">#${idx + 1}</span>
-              <div class="fech-game-balls">${balls}</div>
-            </div>
-          `;
-        })
-        .join('');
-    }
-
-    toast(`Fechamento gerado: ${res.total_jogos} jogos de ${res.k} dezenas (${res.cobertura_pct}% garantia).`);
+    renderFechamentoOutput(res, null);
+    toast(`Fechamento gerado: ${res.total_jogos} jogos de ${res.k} dezenas (${garantiaLabel(res.garantia)} ${res.cobertura_pct}%).`);
   } catch (err) {
     toast(err.message || 'Erro ao gerar fechamento.', true);
   }
@@ -1848,7 +1934,7 @@ function testarFechamentoBacktesting() {
   renderBacktestingResult(
     $('#fech-backtesting-box'),
     bt,
-    `Backtesting do Fechamento (${res.v}→${res.k} dez., garantia ${res.garantia === 5 ? 'Quina' : 'Quadra'})`
+    `Backtesting do Fechamento (${res.v}→${res.k} dez., garantia ${garantiaLabel(res.garantia)})`
   );
 }
 

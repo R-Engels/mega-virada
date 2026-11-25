@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.29 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
+﻿﻿<!-- Versão: V. 2.30 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -50,12 +50,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AA/            # Backup imutável V. 2.27
 ├── Backup_Versao_AB/            # Backup imutável V. 2.28
 ├── Backup_Versao_AC/            # Backup imutável V. 2.29
+├── Backup_Versao_AD/            # Backup imutável V. 2.30
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.29)
+## Fluxos de Operação (V. 2.30)
 
-1. **Ajuste Automático de Cotas ao Adicionar Fechamentos / Jogos (6, 7 ou 8 Dezenas)**:
+1. **Fechamentos com Opção Sena (6 Acertos) e Modo Automático (Melhor Garantido)**:
+   - `StatsEngine.generateFechamento` agora aceita garantia `6` (**Sena 100%**), além de Quina (5) e Quadra (4), para jogos de 6, 7 ou 8 dezenas.
+   - `StatsEngine.generateBestFechamento` + botão `🤖 Melhor Garantido` avalia automaticamente todas as estratégias `(6/7/8 dezenas × Sena/Quina/Quadra)`, seleciona a de maior garantia viável com menor custo total e exibe tabela comparativa com troca rápida.
+2. **Ajuste Automático de Cotas ao Adicionar Fechamentos / Jogos (6, 7 ou 8 Dezenas)**:
    - Ao adicionar jogos de fechamento a um participante (novo ou já existente), `p.cotas` é recalculado automaticamente com base tanto na quantidade total de jogos (`Math.ceil(pApostas.length / jogosPorCota)`) quanto no custo oficial Caixa das apostas (`Math.ceil(custoTotalPart / valorCota)`), corrigindo o valor financeiro do participante no bolão.
    - Simetria aplicada em `excluirAposta()` e validação `isMetaOk` em `renderParticipantesTable()`.
 2. **Ajuste de Contraste e Legibilidade no Tema Claro (`[data-theme="light"]`)**:
