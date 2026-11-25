@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.28 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
+﻿﻿<!-- Versão: V. 2.29 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -49,12 +49,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_Z/             # Backup imutável V. 2.26
 ├── Backup_Versao_AA/            # Backup imutável V. 2.27
 ├── Backup_Versao_AB/            # Backup imutável V. 2.28
+├── Backup_Versao_AC/            # Backup imutável V. 2.29
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.28)
+## Fluxos de Operação (V. 2.29)
 
-1. **Ajuste de Contraste e Legibilidade no Tema Claro (`[data-theme="light"]`)**:
+1. **Ajuste Automático de Cotas ao Adicionar Fechamentos / Jogos (6, 7 ou 8 Dezenas)**:
+   - Ao adicionar jogos de fechamento a um participante (novo ou já existente), `p.cotas` é recalculado automaticamente com base tanto na quantidade total de jogos (`Math.ceil(pApostas.length / jogosPorCota)`) quanto no custo oficial Caixa das apostas (`Math.ceil(custoTotalPart / valorCota)`), corrigindo o valor financeiro do participante no bolão.
+   - Simetria aplicada em `excluirAposta()` e validação `isMetaOk` em `renderParticipantesTable()`.
+2. **Ajuste de Contraste e Legibilidade no Tema Claro (`[data-theme="light"]`)**:
    - Removidos fundos escuros fixos (`rgba(15,23,42,...)`) de `.sorteio-actions-box`, `.conferencia-panel` e `#conf-visual-board`, substituídos por classes temáticas responsivas.
    - Contraste reforçado em inputs, placeholders, `.btn-ghost`, `.btn-info-outline` (Backtesting), `.part-quota-box`, `.cotas-control`, `.badge` e painel de Backtesting no tema claro.
 2. **Cálculo Automático do Valor Oficial Caixa por Jogo e Cota**:

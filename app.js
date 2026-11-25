@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.28 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.29 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -283,12 +283,14 @@ function renderParticipantesTable(b) {
 
   tbody.innerHTML = parts
     .map((p) => {
-      const pJogos = apostas.filter((a) => (a.participante_nome || '').toUpperCase() === p.nome.toUpperCase()).length;
+      const pApostas = apostas.filter((a) => (a.participante_nome || '').toUpperCase() === p.nome.toUpperCase());
+      const pJogos = pApostas.length;
+      const pValorReal = pApostas.reduce((acc, a) => acc + StatsEngine.getBetPrice((a.dezenas || []).length, 6.0), 0);
       const meta = (p.cotas || 1) * jogosPorCota;
       const valor = (p.cotas || 1) * (b.valor_cota || 24.0);
       const isPago = !!p.pago;
-      const isMetaOk = pJogos >= meta;
-      const faltam = meta - pJogos;
+      const isMetaOk = pJogos >= meta || (pJogos > 0 && pValorReal >= valor);
+      const faltam = Math.max(0, meta - pJogos);
       const rowClass = !isMetaOk ? 'row-cota-alerta' : '';
 
       return `
@@ -636,13 +638,16 @@ window.excluirAposta = function (apostaId) {
   }
   b.apostas = (b.apostas || []).filter((a) => a.id !== apostaId);
 
-  // Recálculo automático de cotas se jogos forem reduzidos
+  // Recálculo automático de cotas se jogos forem reduzidos (por quantidade e por valor oficial)
   const jogosPorCota = Math.max(1, parseInt(b.jogos_por_cota, 10) || 4);
+  const valorCota = Math.max(1, Number(b.valor_cota || 24.0));
   const p = (b.participantes || []).find((x) => (x.nome || '').toUpperCase() === partNome.toUpperCase());
   let msgCota = '';
   if (p && p.cotas > 1) {
-    const remainingJogos = b.apostas.filter((a) => (a.participante_nome || '').toUpperCase() === partNome.toUpperCase()).length;
-    const novasCotas = Math.max(1, Math.ceil(remainingJogos / jogosPorCota));
+    const remainingApostas = b.apostas.filter((a) => (a.participante_nome || '').toUpperCase() === partNome.toUpperCase());
+    const remainingJogos = remainingApostas.length;
+    const custoRestante = remainingApostas.reduce((acc, a) => acc + StatsEngine.getBetPrice((a.dezenas || []).length, 6.0), 0);
+    const novasCotas = Math.max(1, Math.ceil(remainingJogos / jogosPorCota), Math.ceil(custoRestante / valorCota));
     if (novasCotas < p.cotas) {
       const antigasCotas = p.cotas;
       p.cotas = novasCotas;
@@ -1868,11 +1873,10 @@ function adicionarFechamentoAoBolao() {
   let p = b.participantes.find((x) => (x.nome || '').toUpperCase() === partNome);
   if (!p) {
     const newId = b.participantes.reduce((m, x) => Math.max(m, x.id || 0), 0) + 1;
-    const jogosPorCota = Math.max(1, parseInt(b.jogos_por_cota, 10) || 4);
     p = {
       id: newId,
       nome: partNome,
-      cotas: Math.max(1, Math.ceil(res.total_jogos / jogosPorCota)),
+      cotas: 1,
       pago: 0,
       valor_pago: 0,
     };
@@ -1900,9 +1904,21 @@ function adicionarFechamentoAoBolao() {
   });
 
   if (adicionados > 0) {
+    // Recalcula automaticamente a quantidade de cotas do participante considerando jogos e valor oficial Caixa
+    const jogosPorCota = Math.max(1, parseInt(b.jogos_por_cota, 10) || 4);
+    const valorCota = Math.max(1, Number(b.valor_cota || 24.0));
+    const pApostas = b.apostas.filter((a) => (a.participante_nome || '').toUpperCase() === p.nome.toUpperCase());
+    const custoTotalPart = pApostas.reduce((acc, a) => acc + StatsEngine.getBetPrice((a.dezenas || []).length, 6.0), 0);
+    const cotasNecessarias = Math.max(
+      1,
+      Math.ceil(pApostas.length / jogosPorCota),
+      Math.ceil(custoTotalPart / valorCota)
+    );
+    p.cotas = Math.max(p.cotas || 1, cotasNecessarias);
+
     persistAndBroadcast();
     renderAll();
-    toast(`${adicionados} jogo(s) de ${res.k} dezenas adicionados ao bolão!`);
+    toast(`${adicionados} jogo(s) de ${res.k} dezenas adicionados para ${p.nome} (${p.cotas} cota${p.cotas > 1 ? 's' : ''})!`);
   } else {
     toast('Todos os jogos deste fechamento já existem no bolão.');
   }

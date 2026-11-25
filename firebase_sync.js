@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.28 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.29 (Nuvem 24h Padrão)
  * Sincronização em Tempo Real via Google Firebase Realtime Database
  */
 
