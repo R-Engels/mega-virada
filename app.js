@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.26 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.27 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1402,13 +1402,32 @@ function bindEvents() {
     renderAll();
   });
 
+  // Recálculo automático do valor oficial Caixa (6..20 dezenas) e valor da cota
+  const syncBolaoCfgPrices = (updateGamePrice) => {
+    const dez = Math.max(6, Math.min(20, parseInt($('#bolao-cfg-dezenas')?.value, 10) || 6));
+    const jogosCota = Math.max(1, parseInt($('#bolao-cfg-jogos-cota')?.value, 10) || 1);
+    const valJogoEl = $('#bolao-cfg-valor-jogo');
+    const valCotaEl = $('#bolao-cfg-valor-cota');
+    let valJogo = parseFloat(valJogoEl?.value) || 6.0;
+    if (updateGamePrice) {
+      valJogo = StatsEngine.getBetPrice(dez, 6.0);
+      if (valJogoEl) valJogoEl.value = valJogo.toFixed(2);
+    }
+    if (valCotaEl) valCotaEl.value = (valJogo * jogosCota).toFixed(2);
+  };
+  $('#bolao-cfg-dezenas')?.addEventListener('input', () => syncBolaoCfgPrices(true));
+  $('#bolao-cfg-dezenas')?.addEventListener('change', () => syncBolaoCfgPrices(true));
+  $('#bolao-cfg-jogos-cota')?.addEventListener('input', () => syncBolaoCfgPrices(false));
+  $('#bolao-cfg-jogos-cota')?.addEventListener('change', () => syncBolaoCfgPrices(false));
+  $('#bolao-cfg-valor-jogo')?.addEventListener('input', () => syncBolaoCfgPrices(false));
+
   $('#btn-save-bolao-cfg')?.addEventListener('click', () => {
     const b = getCurrentBolao();
     if (!b) return;
-    b.dezenas_por_jogo = parseInt($('#bolao-cfg-dezenas').value, 10) || 6;
-    b.jogos_por_cota = parseInt($('#bolao-cfg-jogos-cota').value, 10) || 4;
-    b.valor_jogo = parseFloat($('#bolao-cfg-valor-jogo').value) || 6.0;
-    b.valor_cota = parseFloat($('#bolao-cfg-valor-cota').value) || 24.0;
+    b.dezenas_por_jogo = Math.max(6, Math.min(20, parseInt($('#bolao-cfg-dezenas').value, 10) || 6));
+    b.jogos_por_cota = Math.max(1, parseInt($('#bolao-cfg-jogos-cota').value, 10) || 4);
+    b.valor_jogo = parseFloat($('#bolao-cfg-valor-jogo').value) || StatsEngine.getBetPrice(b.dezenas_por_jogo, 6.0);
+    b.valor_cota = parseFloat($('#bolao-cfg-valor-cota').value) || (b.valor_jogo * b.jogos_por_cota);
     persistAndBroadcast();
     renderAll();
     toast('Regras do bolão atualizadas.');

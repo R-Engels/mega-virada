@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.26 (Nuvem 24h Padrão) | Atualizado em: 2026-11-24 -->
+﻿﻿<!-- Versão: V. 2.27 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -47,12 +47,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_X/             # Backup imutável V. 2.24
 ├── Backup_Versao_Y/             # Backup imutável V. 2.25
 ├── Backup_Versao_Z/             # Backup imutável V. 2.26
+├── Backup_Versao_AA/            # Backup imutável V. 2.27
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.26)
+## Fluxos de Operação (V. 2.27)
 
-1. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:
+1. **Cálculo Automático do Valor Oficial Caixa por Jogo e Cota**:
+   - Alterar `Números por Jogo (6 a 20)` (`#bolao-cfg-dezenas`) preenche automaticamente `Valor por Jogo (R$)` com o valor oficial Caixa (`StatsEngine.getBetPrice`, ex: 6=R$ 6,00, 7=R$ 42,00, 8=R$ 168,00...) e recalcula `Valor da Cota (R$)` (`valor_jogo × jogos_por_cota`).
+   - Alterar `Jogos por Participante/Cota` ou `Valor por Jogo` também recalcula `Valor da Cota` em tempo real.
+2. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:
    - `StatsEngine.runBacktesting(apostas, concursos)`: testa todos os jogos do bolão (ou fechamento) contra toda a base histórica via bitmasks 32-bit em <5ms, contabilizando Senas, Quinas, Quadras, Concursos Premiados e prêmios múltiplos oficiais Caixa para jogos de 7+ dezenas.
    - `StatsEngine.generateFechamento(selectedNums, k, garantia)`: fechamento matemático (covering design) para grupos de 7 a 20 dezenas desdobrados em jogos de **6, 7 ou 8 dezenas por jogo** com garantia verificada de **Quadra (4)** ou **Quina (5)**, cálculo de economia vs aposta múltipla direta, backtesting integrado e importação direta para o bolão.
 2. **Quadrantes 2×2 em Ordem Oficial no Celular e Blindagem JS na Impressão**:
