@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.45 (Nuvem 24h Padrão)
  * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (Tradicional vs Mega da Virada)
  * Perfis independentes por tipo de folha + prévia visual + impressão óptica limpa para leitora
  */
@@ -143,17 +143,21 @@ const PrinterService = (() => {
 
     const slips = [];
     for (let i = 0; i < games.length; i += jogosPorVolante) {
-      const chunk = games.slice(i, i + jogosPorVolante);
+      const chunk = games.slice(i, i + jogosPorVolante).map((jogo, gIdx) => {
+        const globalIdx = i + gIdx + 1;
+        const cloned = {
+          ...jogo,
+          global_index: globalIdx,
+          game_idx_in_slip: gIdx + 1,
+        };
+        if (!cloned.participante_nome && cloned.participante_id && partMap[cloned.participante_id]) {
+          cloned.participante_nome = partMap[cloned.participante_id];
+        }
+        return cloned;
+      });
       const marks = [];
 
       chunk.forEach((jogo, gIdx) => {
-        const globalIdx = i + gIdx + 1;
-        jogo.global_index = jogo.global_index || globalIdx;
-        jogo.game_idx_in_slip = gIdx + 1;
-        if (!jogo.participante_nome && jogo.participante_id && partMap[jogo.participante_id]) {
-          jogo.participante_nome = partMap[jogo.participante_id];
-        }
-
         const offsetY = prof.game_offsets[gIdx] ?? (gIdx * 48.0);
         const nums = jogo.dezenas || [];
 

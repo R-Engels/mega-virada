@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.44 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.45 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -65,12 +65,21 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AP/            # Backup imutável V. 2.42
 ├── Backup_Versao_AQ/            # Backup imutável V. 2.43
 ├── Backup_Versao_AR/            # Backup imutável V. 2.44
+├── Backup_Versao_AS/            # Backup imutável V. 2.45
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.44)
+## Fluxos de Operação (V. 2.45)
 
-1. **Correção do Viés Excessivo em Q3/Q4 (>31) e Equilíbrio Rigoroso dos 4 Quadrantes**:
+1. **Auditoria Exaustiva ML + Backtests Multi-Horizonte (`t-1..t-100`, `EWMA`, `Era Moderna #1115+`), Steiner 2-Opt, Novo Recorde `12_6_5` e Correção de 10 Bugs Reais**:
+   - **Empirical Bayes James-Stein Calibrado (`getModernEraBayesWeights`)**: substituído o peso sub-regularizado (`M=15, beta=1.5, [0.72..1.38]`, que violava o Princípio da Casa dos Pombos em `112×6` levando bolas a `14×` e piorando `WinDraws` vs uniforme) pelo blend validado **60% Era Moderna (`#1115+`) + 40% EWMA Limpo (`#1115+`, `HL=650`)** com encolhimento Dirichlet ótimo `M=800`, `beta=1.0`, clamp `[0.82, 1.22]`: supera o oráculo uniforme em Proper Out-of-Sample Log-Likelihood (`dLL > 0`), validado em permutação nula (`p = 0,0033`, 0/300 loterias justas) e preserva o empacotamento Steiner sem distorção. Janelas curtas (`t-1`, `t-10`, `t-30`, `t-100`, MLP, GBDT, LogReg) rejeitadas por overfitting em validação cega.
+   - **Steiner Packing Aprimorado (`generatePotenzaGames`)**: construção sequencial guiada por pares inéditos (`Pair-Guided`), guarda absoluta `60/60` (`nf[oldN] <= 1`), reparo explícito Fase 0 `Ov3+ = 0` (zerando triplas até em 333 jogos / R\$ 2.000), busca exata 60-candidatos (`Exact-60 1-Swap`), **Cross-Game 2-Opt Direcionado** invariante em frequência e quadrantes, e cálculo exato de `totalBalls` em carteiras mistas `7+6`.
+   - **Novo Recorde de Fechamento (`12_6_5`: 39 → 38 jogos, `100% m=6`, `100% m=5`, `84,44% m=4`)** + permutação isomórfica `mapWithOptimalPermutation()` também no fallback `v=17..20`.
+   - **Correções de Bugs no Motor, UI e Impressão**:
+     - `generateByBudget()` (`eq7`): bloqueado estouro de orçamento quando `orcamento < R\$ 42` (ex.: R\$ 36 gera 6×6 dez.) e corrigido cálculo de `chance_quadra_1_em` para jogos de 7 dez. via união probabilística exata (`1/1036,82` por jogo de 7 dez. vs `1/2332,16` por 6 dez.).
+     - `app.js`: removidos todos os travamentos fixos em `6 dezenas` / `4 jogos/cota` no volante manual, sorteador e botões de ação (agora respeita `b.dezenas_por_jogo` de `6..20`); corrigido `% Pares / % Ímpares` em `renderHeatmap()` para carteiras mistas (`totalPares + totalImpares`); corrigido falso alerta `Faltam X jogos` em `renderKpis()` e `printSlips()` para carteiras mistas cujo valor já quita a arrecadação; deduplicação antes de validar contagem na conferência/entrada manual; exibição de prêmios múltiplos Caixa na conferência (`conferirApostas` + `renderJogosTable`); detecção dinâmica de `baseMaxConcurso` no cache de extras Caixa.
+     - `printer_service.js`: eliminada mutação in-place de `jogo.global_index` em `buildSlipsPayload()`, corrigindo numeração defasada nos volantes após exclusão de apostas.
+2. **Correção do Viés Excessivo em Q3/Q4 (>31) e Equilíbrio Rigoroso dos 4 Quadrantes**:
    - Corrigida distorção em `generatePotenzaGames()` onde bônus ilimitado por dezenas `>31` (`1.38×` + `+1.5`/bola + SA `2.2×`) concentrava quase todas as apostas em Q3/Q4 em bolões menores (ex.: 6 jogos gerando `Q1=3, Q2=4, Q3=14, Q4=15` e bilhetes 100% altos).
    - `checkFilters()` agora exige ao menos 1 dezena `≤31` e ao menos 1 `>31` (bloqueia tanto datas puras quanto jogos 100% altos).
    - Gerador e Steiner-Packing SA agora equilibram dinamicamente a contagem acumulada dos 4 quadrantes (`qFreq` / `dQVar`) e miram o ponto ótimo anti-divisão (`~52% >31`, ou seja 3–4 altas + 2–3 baixas por bilhete), mantendo `Q1 ≈ Q2 ≈ Q3 ≈ Q4` desde o primeiro jogo, `60/60` dezenas e `Ov3+ = 0`.

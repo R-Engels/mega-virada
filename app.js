@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.45 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -17,7 +17,12 @@ const state = {
   slipsPayload: null,
   confResultado: null,
   currentConcursoIndex: null,
+  baseMaxConcurso: 3090,
 };
+
+function getBolaoKMax(b) {
+  return Math.max(6, Math.min(20, parseInt(b?.dezenas_por_jogo, 10) || 6));
+}
 
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => Array.from(document.querySelectorAll(sel));
@@ -112,6 +117,9 @@ function getParticipantStats(name) {
 }
 
 function updateActionButtonsState(st) {
+  const b = getCurrentBolao();
+  const kMax = getBolaoKMax(b);
+  const jogosCota = Math.max(1, parseInt(b?.jogos_por_cota, 10) || 4);
   const btnUma = $('#btn-sortear-uma');
   const btnQuota = $('#btn-sortear-quota');
   const quotaBox = $('#part-quota-box');
@@ -127,16 +135,16 @@ function updateActionButtonsState(st) {
     }
     if (btnUma) {
       btnUma.disabled = false;
-      if (selCount > 0 && selCount < 6) {
-        btnUma.textContent = `🎯 Completar no Cartão (+${6 - selCount} dezenas)`;
-      } else if (selCount === 6) {
+      if (selCount > 0 && selCount < kMax) {
+        btnUma.textContent = `🎯 Completar no Cartão (+${kMax - selCount} dezenas)`;
+      } else if (selCount === kMax) {
         btnUma.textContent = `🎲 Sortear 1 Jogo Novo Direto pro Bolão`;
       } else {
-        btnUma.textContent = '🎲 Sortear 1 Jogo Direto pro Bolão (6 dezenas)';
+        btnUma.textContent = `🎲 Sortear 1 Jogo Direto pro Bolão (${kMax} dezenas)`;
       }
     }
     if (btnQuota) {
-      btnQuota.textContent = '⚡ Sortear 4 Jogos Inteiros (Regra Recomendada)';
+      btnQuota.textContent = `⚡ Sortear ${jogosCota} Jogo${jogosCota > 1 ? 's' : ''} Inteiro${jogosCota > 1 ? 's' : ''} (Regra Recomendada)`;
       btnQuota.disabled = false;
     }
     if (pickerBoard) pickerBoard.style.opacity = '1';
@@ -185,13 +193,12 @@ function updateActionButtonsState(st) {
 
   if (btnUma) {
     btnUma.disabled = false;
-    const selCount = state.bolaoPickerSelected.size;
-    if (selCount > 0 && selCount < 6) {
-      btnUma.textContent = `🎯 Completar no Cartão (+${6 - selCount} dezenas)`;
-    } else if (selCount === 6) {
+    if (selCount > 0 && selCount < kMax) {
+      btnUma.textContent = `🎯 Completar no Cartão (+${kMax - selCount} dezenas)`;
+    } else if (selCount === kMax) {
       btnUma.textContent = `🎲 Sortear 1 Jogo Novo Direto pro Bolão`;
     } else {
-      btnUma.textContent = `🎲 Sortear 1 Jogo Direto pro Bolão (6 dezenas)`;
+      btnUma.textContent = `🎲 Sortear 1 Jogo Direto pro Bolão (${kMax} dezenas)`;
     }
   }
 
@@ -216,11 +223,16 @@ function renderBolaoSelect() {
 
 function renderBolaoRules(b) {
   if (!b) return;
-  $('#bolao-cfg-dezenas').value = b.dezenas_por_jogo || 6;
+  const kMax = getBolaoKMax(b);
+  $('#bolao-cfg-dezenas').value = kMax;
   $('#bolao-cfg-jogos-cota').value = b.jogos_por_cota || 4;
   $('#bolao-cfg-valor-jogo').value = Number(b.valor_jogo || 6.0).toFixed(2);
   $('#bolao-cfg-valor-cota').value = Number(b.valor_cota || 24.0).toFixed(2);
-  $('#bolao-rule-badge').textContent = `Regra ativa: ${b.dezenas_por_jogo || 6} dez. · ${b.jogos_por_cota || 4} jogos/cota`;
+  $('#bolao-rule-badge').textContent = `Regra ativa: ${kMax} dez. · ${b.jogos_por_cota || 4} jogos/cota`;
+  const hint = $('#aposta-limit-hint');
+  if (hint) hint.textContent = `Limite: exatamente ${kMax} dezenas por jogo · Jogos duplicados proibidos.`;
+  const limBadge = $('#aposta-limit-badge');
+  if (limBadge) limBadge.textContent = `Selecionadas: ${state.bolaoPickerSelected.size} / ${kMax}`;
 }
 
 function renderKpis(b) {
@@ -241,7 +253,9 @@ function renderKpis(b) {
   const pctPago = arrecadacaoTotal > 0 ? Math.round((valorPago / arrecadacaoTotal) * 100) : 0;
   const metaJogos = totalCotas * (b.jogos_por_cota || 4);
   const totalJogos = apostas.length;
-  const jogosFaltantes = Math.max(0, metaJogos - totalJogos);
+  const totalValorApostas = apostas.reduce((acc, a) => acc + StatsEngine.getBetPrice((a.dezenas || []).length, 6.0), 0);
+  const cobertoPorValor = totalJogos > 0 && arrecadacaoTotal > 0 && totalValorApostas >= arrecadacaoTotal - 0.01;
+  const jogosFaltantes = cobertoPorValor ? 0 : Math.max(0, metaJogos - totalJogos);
 
   el.innerHTML = `
     <div class="kpi ${jogosFaltantes > 0 ? 'kpi-alerta' : ''}">
@@ -356,14 +370,17 @@ function renderJogosTable(b) {
       let acertosTxt = '-';
       let rowCls = '';
       if (conf) {
+        const multTxt = conf.premios_mult
+          ? ` <small class="muted">(${conf.premios_mult.senas ? conf.premios_mult.senas + 'S ' : ''}${conf.premios_mult.quinas ? conf.premios_mult.quinas + 'Q5 ' : ''}${conf.premios_mult.quadras ? conf.premios_mult.quadras + 'Q4' : ''})</small>`
+          : '';
         if (conf.faixa === 'SENA') {
-          acertosTxt = '<span class="badge-premio sena">🎉 SENA! (6 Acertos)</span>';
+          acertosTxt = `<span class="badge-premio sena">🎉 SENA! (6 Acertos)</span>${multTxt}`;
           rowCls = 'tr-award-sena';
         } else if (conf.faixa === 'QUINA') {
-          acertosTxt = '<span class="badge-premio quina">🥈 QUINA! (5 Acertos)</span>';
+          acertosTxt = `<span class="badge-premio quina">🥈 QUINA! (5 Acertos)</span>${multTxt}`;
           rowCls = 'tr-award-quina';
         } else if (conf.faixa === 'QUADRA') {
-          acertosTxt = '<span class="badge-premio quadra">🥉 QUADRA! (4 Acertos)</span>';
+          acertosTxt = `<span class="badge-premio quadra">🥉 QUADRA! (4 Acertos)</span>${multTxt}`;
           rowCls = 'tr-award-quadra';
         } else if (conf.qtd_acertos > 0) {
           acertosTxt = `<span class="badge-acertos">🎯 ${conf.qtd_acertos} acerto${conf.qtd_acertos > 1 ? 's' : ''}</span>`;
@@ -477,7 +494,7 @@ function renderHeatmap(b) {
     });
   });
 
-  const totalNums = (b.apostas || []).length * (b.dezenas_por_jogo || 6);
+  const totalNums = totalPares + totalImpares;
 
   $('#stats-quadrants-summary').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;font-size:12px;text-align:center">
@@ -552,12 +569,13 @@ function initPicker() {
   board.addEventListener('click', (e) => {
     const btn = e.target.closest('.ball-pick');
     if (!btn) return;
+    const kMax = getBolaoKMax(getCurrentBolao());
     const n = parseInt(btn.dataset.num, 10);
     if (state.bolaoPickerSelected.has(n)) {
       state.bolaoPickerSelected.delete(n);
     } else {
-      if (state.bolaoPickerSelected.size >= 6) {
-        toast('Limite de 6 dezenas por jogo atingido.', true);
+      if (state.bolaoPickerSelected.size >= kMax) {
+        toast(`Limite de ${kMax} dezenas por jogo atingido.`, true);
         return;
       }
       state.bolaoPickerSelected.add(n);
@@ -567,6 +585,7 @@ function initPicker() {
 }
 
 function updatePickerUi() {
+  const kMax = getBolaoKMax(getCurrentBolao());
   const drawnSet = state.confResultado ? new Set(state.confResultado.dezenas_sorteadas) : null;
 
   $$('.ball-pick').forEach((btn) => {
@@ -582,7 +601,7 @@ function updatePickerUi() {
     if (el) el.textContent = `${qCounts[q]} sel.`;
   }
 
-  $('#aposta-limit-badge').textContent = `Selecionadas: ${state.bolaoPickerSelected.size} / 6`;
+  $('#aposta-limit-badge').textContent = `Selecionadas: ${state.bolaoPickerSelected.size} / ${kMax}`;
   const sorted = Array.from(state.bolaoPickerSelected).sort((a, b) => a - b);
   $('#aposta-text').value = sorted.map((n) => String(n).padStart(2, '0')).join(' ');
 
@@ -675,18 +694,19 @@ function addApostaManual() {
     return;
   }
 
+  const kMax = getBolaoKMax(b);
   let dezenas = Array.from(state.bolaoPickerSelected);
-  if (dezenas.length !== 6) {
-    // Tenta ler do input text
+  if (dezenas.length !== kMax) {
+    // Tenta ler do input text (deduplicando antes de validar contagem)
     const txt = ($('#aposta-text')?.value || '').trim();
-    const nums = txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60);
-    if (nums.length === 6) {
-      dezenas = Array.from(new Set(nums));
+    const nums = Array.from(new Set(txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60)));
+    if (nums.length === kMax) {
+      dezenas = nums;
     }
   }
 
-  if (dezenas.length !== 6) {
-    toast('Selecione exatamente 6 dezenas.', true);
+  if (dezenas.length !== kMax) {
+    toast(`Selecione exatamente ${kMax} dezenas distintas.`, true);
     return;
   }
 
@@ -727,7 +747,7 @@ function addApostaManual() {
     id: Date.now() + Math.floor(Math.random() * 1000),
     participante_id: p.id,
     participante_nome: p.nome,
-    tipo_aposta: 6,
+    tipo_aposta: kMax,
     dezenas: dezenas,
     origem: 'manual',
     criado_em: new Date().toISOString(),
@@ -758,14 +778,15 @@ function sortearUmaAposta() {
     return;
   }
 
-  const fixed = Array.from(state.bolaoPickerSelected);
-  const modernW = StatsEngine.getModernEraBayesWeights(state.concursos || [], 1.5);
+  const kMax = getBolaoKMax(b);
+  const fixed = Array.from(state.bolaoPickerSelected).slice(0, kMax);
+  const modernW = StatsEngine.getModernEraBayesWeights(state.concursos || []);
 
-  // Se tiver de 1 a 5 dezenas marcadas no cartão: apenas completa no cartão para revisão do usuário
-  if (fixed.length > 0 && fixed.length < 6) {
+  // Se tiver de 1 a kMax-1 dezenas marcadas no cartão: apenas completa no cartão para revisão do usuário
+  if (fixed.length > 0 && fixed.length < kMax) {
     const gen = StatsEngine.generatePotenzaGames({
       quantidade: 1,
-      dezenas_por_jogo: 6,
+      dezenas_por_jogo: kMax,
       base_existing: b.apostas || [],
       fixed_nums: fixed,
       modern_bayes_weights: modernW,
@@ -783,10 +804,10 @@ function sortearUmaAposta() {
     return;
   }
 
-  // Se tiver 0 ou 6 dezenas marcadas: sorteia jogo novo diretamente pro bolão
+  // Se tiver 0 ou kMax dezenas marcadas: sorteia jogo novo diretamente pro bolão
   const gen = StatsEngine.generatePotenzaGames({
     quantidade: 1,
-    dezenas_por_jogo: 6,
+    dezenas_por_jogo: kMax,
     base_existing: b.apostas || [],
     fixed_nums: [],
     modern_bayes_weights: modernW,
@@ -815,7 +836,7 @@ function sortearUmaAposta() {
     id: Date.now() + Math.floor(Math.random() * 1000),
     participante_id: p.id,
     participante_nome: p.nome,
-    tipo_aposta: 6,
+    tipo_aposta: kMax,
     dezenas: sorteada,
     origem: 'sorteio_regra',
     criado_em: new Date().toISOString(),
@@ -846,12 +867,13 @@ function sortearCotaInteira() {
     return;
   }
 
+  const kMax = getBolaoKMax(b);
   const qtd = st.restantes;
   const gen = StatsEngine.generatePotenzaGames({
     quantidade: qtd,
-    dezenas_por_jogo: 6,
+    dezenas_por_jogo: kMax,
     base_existing: b.apostas || [],
-    modern_bayes_weights: StatsEngine.getModernEraBayesWeights(state.concursos || [], 1.5),
+    modern_bayes_weights: StatsEngine.getModernEraBayesWeights(state.concursos || []),
   });
 
   if (!gen || gen.jogos.length < qtd) {
@@ -876,7 +898,7 @@ function sortearCotaInteira() {
       id: Date.now() + i * 10 + Math.floor(Math.random() * 10),
       participante_id: p.id,
       participante_nome: p.nome,
-      tipo_aposta: 6,
+      tipo_aposta: kMax,
       dezenas: j.dezenas,
       origem: 'sorteio_cota_regra',
       criado_em: new Date().toISOString(),
@@ -1083,8 +1105,12 @@ function printSlips() {
   if (b) {
     const totalCotas = (b.participantes || []).reduce((acc, p) => acc + (p.cotas || 1), 0);
     const metaJogos = totalCotas * (b.jogos_por_cota || 4);
-    const totalJogos = (b.apostas || []).length;
-    if (totalJogos < metaJogos) {
+    const apostas = b.apostas || [];
+    const totalJogos = apostas.length;
+    const arrecadacaoTotal = totalCotas * Number(b.valor_cota || 24.0);
+    const totalValorApostas = apostas.reduce((acc, a) => acc + StatsEngine.getBetPrice((a.dezenas || []).length, 6.0), 0);
+    const cobertoPorValor = totalJogos > 0 && arrecadacaoTotal > 0 && totalValorApostas >= arrecadacaoTotal - 0.01;
+    if (totalJogos < metaJogos && !cobertoPorValor) {
       const faltam = metaJogos - totalJogos;
       if (!confirm(`⚠️ ATENÇÃO: O bolão possui ${totalCotas} cotas (${metaJogos} jogos esperados), mas apenas ${totalJogos} jogos foram registrados (faltam ${faltam} jogos).\n\nSe imprimir agora, faltarão volantes ou a marcação ficará incompleta.\n\nDeseja imprimir os volantes assim mesmo?`)) {
         return;
@@ -1272,10 +1298,10 @@ function abrirModalConferencia() {
 function executarConferencia() {
   const b = getCurrentBolao();
   const txt = ($('#conf-dezenas-input')?.value || '').trim();
-  const nums = txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60);
+  const nums = Array.from(new Set(txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60)));
 
   if (nums.length !== 6) {
-    toast('Informe exatamente 6 dezenas para conferir.', true);
+    toast('Informe exatamente 6 dezenas distintas para conferir.', true);
     return;
   }
 
@@ -1389,7 +1415,7 @@ function mergeConcursosAndCache(newRecords) {
   if (updated) {
     state.concursos = Array.from(byNum.values()).sort((a, b) => a.concurso - b.concurso);
     try {
-      const extras = state.concursos.filter((c) => c.concurso > 3090);
+      const extras = state.concursos.filter((c) => c.concurso > (state.baseMaxConcurso || 3090));
       if (extras.length) {
         localStorage.setItem(CAIXA_EXTRAS_STORAGE_KEY, JSON.stringify(extras));
       }
@@ -1463,9 +1489,12 @@ async function atualizarResultadoCaixa(opts = {}) {
 async function loadInitialData() {
   // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json?v=2.44');
+    const resp = await fetch('data/concursos.json?v=2.45');
     if (resp.ok) {
       state.concursos = await resp.json();
+      if (state.concursos.length) {
+        state.baseMaxConcurso = state.concursos[state.concursos.length - 1].concurso || 3090;
+      }
     }
   } catch (e) {
     console.warn('Não foi possível carregar data/concursos.json:', e);
@@ -1585,8 +1614,12 @@ function bindEvents() {
     b.jogos_por_cota = Math.max(1, parseInt($('#bolao-cfg-jogos-cota').value, 10) || 4);
     b.valor_jogo = parseFloat($('#bolao-cfg-valor-jogo').value) || StatsEngine.getBetPrice(b.dezenas_por_jogo, 6.0);
     b.valor_cota = parseFloat($('#bolao-cfg-valor-cota').value) || (b.valor_jogo * b.jogos_por_cota);
+    if (state.bolaoPickerSelected.size > b.dezenas_por_jogo) {
+      state.bolaoPickerSelected = new Set(Array.from(state.bolaoPickerSelected).slice(0, b.dezenas_por_jogo));
+    }
     persistAndBroadcast();
     renderAll();
+    updatePickerUi();
     toast('Regras do bolão atualizadas.');
   });
 
@@ -1672,9 +1705,9 @@ function bindEvents() {
 
   $('#btn-exec-conf-inline')?.addEventListener('click', () => {
     const txt = ($('#conf-dezenas-inline')?.value || '').trim();
-    const nums = txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60);
+    const nums = Array.from(new Set(txt.split(/[\s,.-]+/).map(Number).filter((n) => n >= 1 && n <= 60)));
     if (nums.length !== 6) {
-      toast('Informe exatamente 6 dezenas para conferir.', true);
+      toast('Informe exatamente 6 dezenas distintas para conferir.', true);
       return;
     }
     executarConferenciaVisual(nums, 'Manual');

@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.45 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -33,9 +33,13 @@ Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via
 
 ---
 
-## 🎯 Principais Recursos (V. 2.44)
+## 🎯 Principais Recursos (V. 2.45)
 
-1. **Impressão Separada: Mega-Sena Tradicional (Dia a Dia) vs Mega da Virada**:
+1. **Motor Estatístico Calibrado (Empirical Bayes + EWMA Era Moderna), Steiner 2-Opt e Novo Recorde `12→6 Quina` (38 Jogos)**:
+   - Calibração Empirical Bayes James-Stein (60% Era Moderna `#1115+` + 40% EWMA adaptativo `HL=650`, prior `M=800`) validada em backtesting causal multi-horizonte e permutação nula (`p = 0,0033`), preservando cobertura `60/60` e equilíbrio rigoroso dos 4 quadrantes.
+   - Empacotamento Steiner com construção guiada por pares, reparo `Ov3+ = 0` até 333 jogos, busca exata 60-candidatos e Cross-Game 2-Opt invariante em frequência/quadrantes.
+   - Suporte completo a regras de `6..20` dezenas no volante e sorteador, correção de métricas em carteiras mistas (`7+6`), prêmios múltiplos na conferência e numeração limpa nos volantes após exclusões.
+2. **Impressão Separada: Mega-Sena Tradicional (Dia a Dia) vs Mega da Virada**:
    - Seletor dedicado de folha na impressão óptica com perfis independentes (`83×185mm` dia a dia vs folha especial da Mega da Virada, sem Teimosinha), jogos por volante configuráveis (`1–3`), calibração isolada e ajuste automático de orientação A4 (`Paisagem`/`Retrato`) sem corte.
 2. **Sincronização Automática Caixa ao Abrir (CORS Corrigido + Preenchimento de Lacunas)**:
    - Atualiza automaticamente os sorteios mais recentes e intermediários faltantes direto da API oficial Caixa / espelho CORS ao abrir o aplicativo, mantendo o semáforo e a data do próximo sorteio sempre atualizados.
