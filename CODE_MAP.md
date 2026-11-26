@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.39 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.40 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -16,7 +16,7 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG (V. 2.22)
 ├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage (V. 2.22)
 ├── data/
-│   ├── concursos.json           # Base histórica compactada dos 3.087 concursos
+│   ├── concursos.json           # Base histórica compactada dos 3.090 concursos (+ auto-sync Caixa)
 │   └── initial_state.json       # Estado inicial do Bolão Potenza e catálogo de nomes
 ├── CODE_MAP.md                  # Este mapa arquitetural
 ├── README.md                    # Documentação do repositório e link GitHub Pages
@@ -60,12 +60,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AK/            # Backup imutável V. 2.37
 ├── Backup_Versao_AL/            # Backup imutável V. 2.38
 ├── Backup_Versao_AM/            # Backup imutável V. 2.39
+├── Backup_Versao_AN/            # Backup imutável V. 2.40
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.39)
+## Fluxos de Operação (V. 2.40)
 
-1. **Tendência Globo Moderno (`#1115+`) Ativada por Padrão em Todo o Motor**:
+1. **Sincronização Automática Caixa ao Abrir (CORS Corrigido + Preenchimento de Lacunas + Data do Próximo Sorteio)**:
+   - Corrigido CORS na consulta online: substituído `api.guidi.dev.br` (sem header `Access-Control-Allow-Origin`) por cadeia com fallback CORS `ACAO: *` (`loteriascaixa-api.herokuapp.com` → `servicebus2.caixa.gov.br` oficial → `api.guidi.dev.br`).
+   - `loadInitialData()` agora dispara `atualizarResultadoCaixa({ silent: true })` automaticamente ao abrir a página, baixa todos os concursos intermediários faltantes (`maxLocal + 1 .. ultimo`), persiste extras em `localStorage` (`megasena_concursos_extras`) e atualiza automaticamente o banner e o semáforo `#timing-ev-panel` com a **data exata do próximo sorteio** (`data_proximo`).
+   - Base `data/concursos.json` atualizada até `#3090` (`24/11/2026`, próximo `#3091` em `26/11/2026` — R\$ 75M, 6× acumulada).
+2. **Tendência Globo Moderno (`#1115+`) Ativada por Padrão em Todo o Motor**:
    - Checkbox `#fech-modern-bayes` (`🧬 Tendência Globo Moderno (#1115+)`) marcada por padrão (`checked`) no Montador por Orçamento, e `useModernBayes` padrão `true` em `StatsEngine.generateByBudget()`.
    - Sorteios automáticos da aba Registrar & Sortear (`sortearUmaAposta()` e `sortearCotaInteira()`) também utilizam `StatsEngine.getModernEraBayesWeights(state.concursos, 1.5)` por padrão, preservando cobertura `60/60`, anti-divisão (`>31`) e `Ov3+ = 0`.
 2. **Semáforo "Melhor Momento de Jogar" Enxuto (Somente Concurso Atual)**:

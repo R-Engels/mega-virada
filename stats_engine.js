@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.39 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.40 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -1271,6 +1271,20 @@ const StatsEngine = (() => {
       : baseEst;
 
     const ultData = ult?.data || '';
+    let proxData = ult?.data_proximo || '';
+    if (!proxData && ultData && /^\d{2}\/\d{2}\/\d{4}$/.test(ultData)) {
+      // Grade regular Caixa 2026: Terça (2), Quinta (4), Domingo (0)
+      const [dd, mm, yyyy] = ultData.split('/').map(Number);
+      const dt = new Date(yyyy, mm - 1, dd);
+      for (let step = 1; step <= 7; step++) {
+        dt.setDate(dt.getDate() + 1);
+        const dow = dt.getDay();
+        if (dow === 0 || dow === 2 || dow === 4) {
+          proxData = `${String(dt.getDate()).padStart(2, '0')}/${String(dt.getMonth() + 1).padStart(2, '0')}/${dt.getFullYear()}`;
+          break;
+        }
+      }
+    }
     const autoVirada = J >= 350e6 || (ultData.includes('/12/') && parseInt(ultData.split('/')[0], 10) >= 18);
     const isVirada = isViradaOverride !== null ? !!isViradaOverride : autoVirada;
 
@@ -1331,6 +1345,7 @@ const StatsEngine = (() => {
       ultimo_concurso: ult ? ult.concurso : 0,
       ultima_data: ultData,
       prox_concurso: proxConcurso,
+      prox_data: proxData,
       streak_acumulada: streak,
       is_final_05: isFinal05,
       falta_final_05: faltaFinal05,

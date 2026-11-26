@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.39 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.40 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1274,69 +1274,166 @@ function executarConferencia() {
   renderJogosTable(b);
 }
 
-// ===== ATUALIZAR RESULTADO CAIXA (CORS MIRROR) =====
+// ===== ATUALIZAR RESULTADO CAIXA (AUTO-SYNC + CORS FALLBACK + LACUNAS) =====
 
-async function atualizarResultadoCaixa() {
+const CAIXA_EXTRAS_STORAGE_KEY = 'megasena_concursos_extras_v1';
+
+function normalizeCaixaRecord(data) {
+  if (!data || typeof data !== 'object') return null;
+  const concNum = parseInt(data.numero || data.concurso, 10);
+  const dezRaw = data.listaDezenas || data.dezenas || [];
+  const dezenas = dezRaw.map(Number).filter((n) => n >= 1 && n <= 60).sort((a, b) => a - b);
+  if (!concNum || dezenas.length !== 6) return null;
+  return {
+    concurso: concNum,
+    data: data.dataApuracao || data.data || '',
+    data_proximo: data.dataProximoConcurso || data.data_proximo || '',
+    dezenas,
+    acumulada: Boolean(data.acumulado !== undefined ? data.acumulado : (data.acumulou !== undefined ? data.acumulou : data.acumulada)),
+    estimativa: Number(data.valorEstimadoProximoConcurso || data.estimativa || 0),
+  };
+}
+
+async function fetchCaixaConcurso(num = null) {
+  const urls = num
+    ? [
+        `https://loteriascaixa-api.herokuapp.com/api/megasena/${num}`,
+        `https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena/${num}`,
+        `https://api.guidi.dev.br/loteria/megasena/${num}`,
+      ]
+    : [
+        'https://loteriascaixa-api.herokuapp.com/api/megasena/latest',
+        'https://servicebus2.caixa.gov.br/portaldeloterias/api/megasena',
+        'https://api.guidi.dev.br/loteria/megasena/ultimo',
+      ];
+  for (const url of urls) {
+    try {
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 6500);
+      const res = await fetch(url, { headers: { Accept: 'application/json' }, signal: ctrl.signal });
+      clearTimeout(timer);
+      if (!res.ok) continue;
+      const rec = normalizeCaixaRecord(await res.json());
+      if (rec) return rec;
+    } catch (_) {}
+  }
+  return null;
+}
+
+function mergeConcursosAndCache(newRecords) {
+  const byNum = new Map();
+  (state.concursos || []).forEach((c) => byNum.set(c.concurso, c));
+  let added = 0;
+  let updated = false;
+  (newRecords || []).forEach((rec) => {
+    if (!rec || !rec.concurso) return;
+    const prev = byNum.get(rec.concurso);
+    if (!prev) {
+      byNum.set(rec.concurso, rec);
+      added++;
+      updated = true;
+    } else if ((!prev.data_proximo && rec.data_proximo) || (!prev.estimativa && rec.estimativa)) {
+      byNum.set(rec.concurso, { ...prev, ...rec });
+      updated = true;
+    }
+  });
+  if (updated) {
+    state.concursos = Array.from(byNum.values()).sort((a, b) => a.concurso - b.concurso);
+    try {
+      const extras = state.concursos.filter((c) => c.concurso > 3090);
+      if (extras.length) {
+        localStorage.setItem(CAIXA_EXTRAS_STORAGE_KEY, JSON.stringify(extras));
+      }
+    } catch (_) {}
+  }
+  return added;
+}
+
+function updateSyncBannerFromLatest() {
+  if (!state.concursos || !state.concursos.length) return;
+  const u = state.concursos[state.concursos.length - 1];
+  const banner = $('#sync-banner');
+  if (banner) {
+    banner.textContent = `Concurso Mais Recente: #${u.concurso} (${u.data}) · Dezenas: ${u.dezenas.map((n) => String(n).padStart(2, '0')).join(', ')}`;
+  }
+}
+
+async function atualizarResultadoCaixa(opts = {}) {
+  const silent = !!(opts && opts.silent);
   const btn = $('#btn-sync');
-  btn.disabled = true;
-  btn.textContent = 'Buscando Caixa...';
+  if (btn && !silent) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="btn-text-full">Buscando Caixa...</span><span class="btn-text-short">...</span>';
+  }
 
   try {
-    // Espelho público oficial com CORS liberado
-    const res = await fetch('https://api.guidi.dev.br/loteria/megasena/ultimo');
-    if (!res.ok) throw new Error('Falha na resposta da API');
-    const data = await res.json();
+    const latest = await fetchCaixaConcurso(null);
+    if (!latest) throw new Error('Falha nas APIs da Caixa');
 
-    const dezenas = (data.dezenas || data.listaDezenas || []).map(Number);
-    const concNum = parseInt(data.numero || data.concurso, 10);
+    const localMax = state.concursos.length ? state.concursos[state.concursos.length - 1].concurso : 0;
+    const fetched = [latest];
 
-    if (concNum && dezenas.length === 6) {
-      // Verifica se já existe
-      const exists = state.concursos.some((c) => c.concurso === concNum);
-      if (!exists) {
-        state.concursos.push({
-          concurso: concNum,
-          data: data.dataApuracao || data.data || '',
-          dezenas: dezenas,
-          acumulada: !!data.acumulado,
-          estimativa: data.valorEstimadoProximoConcurso || 0.0,
-        });
-        state.concursos.sort((a, b) => a.concurso - b.concurso);
-        toast(`Concurso ${concNum} atualizado com sucesso: ${dezenas.join(', ')}`);
+    // Preenche automaticamente todos os concursos intermediários faltantes (até 30 atrás)
+    if (localMax > 0 && latest.concurso > localMax + 1) {
+      const startGap = Math.max(localMax + 1, latest.concurso - 29);
+      const gapNums = [];
+      for (let n = startGap; n < latest.concurso; n++) gapNums.push(n);
+      const gapResults = await Promise.all(gapNums.map((n) => fetchCaixaConcurso(n)));
+      gapResults.forEach((r) => { if (r) fetched.push(r); });
+    }
+
+    const added = mergeConcursosAndCache(fetched);
+    updateSyncBannerFromLatest();
+    renderTimingPanel();
+
+    if (!silent) {
+      if (added > 0) {
+        toast(`Base atualizada (+${added} concurso${added > 1 ? 's' : ''}) até #${latest.concurso} (${latest.data})!`);
       } else {
-        toast(`Concurso mais recente (${concNum}) já está sincronizado.`);
+        toast(`Concurso mais recente (#${latest.concurso} · ${latest.data}) já está sincronizado.`);
       }
-
-      $('#sync-banner').textContent = `Concurso Mais Recente: #${concNum} (${data.dataApuracao || ''}) · Dezenas: ${dezenas.join(', ')}`;
-      renderTimingPanel();
-      executarConferenciaVisual(dezenas, concNum);
+      executarConferenciaVisual(latest.dezenas, `${latest.concurso} (${latest.data})`);
+    } else if (added > 0) {
+      toast(`Caixa sincronizada automaticamente até #${latest.concurso} (${latest.data}).`);
     }
   } catch (err) {
-    console.warn('Erro ao consultar espelho Caixa:', err);
-    toast('Não foi possível conectar à API da Caixa agora. Usando dados locais.', true);
+    console.warn('Erro ao consultar APIs da Caixa:', err);
+    if (!silent) {
+      toast('Não foi possível conectar à API da Caixa agora. Usando base local.', true);
+    }
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Atualizar Resultado Caixa';
+    if (btn && !silent) {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="btn-text-full">Atualizar Resultado Caixa</span><span class="btn-text-short">Atualizar</span>';
+    }
   }
 }
 
 // ===== INICIALIZAÇÃO =====
 
 async function loadInitialData() {
-  // 1. Concursos
+  // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json');
+    const resp = await fetch('data/concursos.json?v=2.40');
     if (resp.ok) {
       state.concursos = await resp.json();
-      if (state.concursos.length) {
-        const u = state.concursos[state.concursos.length - 1];
-        $('#sync-banner').textContent = `Concurso Mais Recente: #${u.concurso} (${u.data}) · Dezenas: ${u.dezenas.join(', ')}`;
-        renderTimingPanel();
-      }
     }
   } catch (e) {
     console.warn('Não foi possível carregar data/concursos.json:', e);
   }
+
+  try {
+    const cachedExtras = JSON.parse(localStorage.getItem(CAIXA_EXTRAS_STORAGE_KEY) || '[]');
+    if (Array.isArray(cachedExtras) && cachedExtras.length) {
+      mergeConcursosAndCache(cachedExtras);
+    }
+  } catch (_) {}
+
+  updateSyncBannerFromLatest();
+  renderTimingPanel();
+
+  // Sincroniza automaticamente novos concursos oficiais da Caixa em segundo plano
+  atualizarResultadoCaixa({ silent: true });
 
   // 2. Estado local ou initial_state.json
   const savedState = localStorage.getItem('megasena_local_bolao_data');
@@ -1558,7 +1655,7 @@ function bindEvents() {
   });
 
   // Atualizar Caixa
-  $('#btn-sync')?.addEventListener('click', atualizarResultadoCaixa);
+  $('#btn-sync')?.addEventListener('click', () => atualizarResultadoCaixa({ silent: false }));
 
   // Filtro de jogos
   $('#filtro-jogos')?.addEventListener('input', () => {
@@ -1843,7 +1940,7 @@ function renderTimingPanel() {
       <div>
         <strong style="font-size:13.5px">${t.icone} ${t.titulo}</strong>
         <div class="muted" style="font-size:11.5px;margin-top:2px">
-          Próximo Concurso #${t.prox_concurso} · Prêmio estimado: <b>R$ ${t.premio_milhoes.toLocaleString('pt-BR')} milhões</b>
+          Próximo Concurso #${t.prox_concurso}${t.prox_data ? ` (${t.prox_data})` : ''} · Prêmio estimado: <b>R$ ${t.premio_milhoes.toLocaleString('pt-BR')} milhões</b>
         </div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
