@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.42 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.43 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -890,9 +890,45 @@ function sortearCotaInteira() {
   toast(`${qtd} jogos sorteados e salvos para ${p.nome}! Cota completa.`);
 }
 
-// ===== IMPRESSÃO ÓPTICA =====
+// ===== IMPRESSÃO ÓPTICA (TRADICIONAL DIA A DIA vs MEGA DA VIRADA) =====
+
+function updatePrintTypeUi() {
+  const tipo = PrinterService.getActiveType();
+  const sel = $('#print-volante-tipo');
+  if (sel) sel.value = tipo;
+
+  const prof = PrinterService.getProfile(tipo);
+  const layout = PrinterService.getPageLayout(prof);
+  const orientLabel = layout.orientation === 'portrait' ? 'Retrato' : 'Paisagem';
+  const jogosVol = prof.jogos_por_volante || 3;
+
+  const pill = $('#print-spec-pill');
+  if (pill) {
+    const tag = tipo === 'virada' ? '✨ Mega da Virada' : '🟢 Dia a Dia';
+    pill.innerHTML = `${tag} · Escala <b>100%</b> · <b>${orientLabel}</b> · <b>Sem margens</b> · ${prof.volante_w_mm}×${prof.volante_h_mm}mm (${jogosVol}j/vol.)`;
+  }
+
+  const btnPrint = $('#btn-print-slips');
+  if (btnPrint) {
+    btnPrint.textContent = `🖨️ Imprimir Volantes A4 (${layout.slipsPerPage} por folha)`;
+  }
+
+  const teimWrap = $('#print-teimosinha-wrap');
+  const teimChk = $('#print-teimosinha');
+  if (teimWrap) {
+    const allowTeim = prof.permite_teimosinha !== false;
+    teimWrap.style.display = allowTeim ? 'flex' : 'none';
+    if (!allowTeim && teimChk) teimChk.checked = false;
+  }
+
+  const calSum = $('#cal-summary-label');
+  if (calSum) {
+    calSum.textContent = `⚙️ Calibração Milimétrica — ${prof.nome} (${prof.volante_w_mm}×${prof.volante_h_mm}mm)`;
+  }
+}
 
 function buildSlipsPreview() {
+  updatePrintTypeUi();
   const b = getCurrentBolao();
   const el = $('#slips-preview');
   if (!el || !b) return;
@@ -906,20 +942,25 @@ function buildSlipsPreview() {
   const partMap = {};
   (b.participantes || []).forEach(p => { partMap[p.id] = p.nome; });
 
-  const teimosinha = $('#print-teimosinha')?.checked;
+  const tipo = PrinterService.getActiveType();
+  const prof = PrinterService.getProfile(tipo);
+  const teimosinha = prof.permite_teimosinha !== false && !!$('#print-teimosinha')?.checked;
   const payload = PrinterService.buildSlipsPayload(apostas, {
+    tipo,
+    profile: prof,
     teimosinha,
     participantesMap: partMap,
     concurso: b.concurso,
   });
   state.slipsPayload = payload;
 
+  const tipoTag = tipo === 'virada' ? ' · Mega da Virada' : ' · Dia a Dia';
   let html = '';
   payload.slips.forEach((s) => {
     html += `
       <div class="slip-preview-card">
         <div class="slip-preview-header">
-          <span>Volante #${s.slip_index} de ${payload.total_slips}</span>
+          <span>Volante #${s.slip_index} de ${payload.total_slips}${tipoTag}</span>
           <span class="slip-preview-meta">${s.total_jogos} jogo${s.total_jogos > 1 ? 's' : ''}</span>
         </div>
         ${PrinterService.renderSlipSvg(s, payload.profile, { showOutline: true, isPreview: true })}
@@ -932,6 +973,8 @@ function buildSlipsPreview() {
 function loadCalibrationInputs() {
   const p = PrinterService.getProfile();
   const setVal = (id, v) => { const el = $(id); if (el) el.value = v; };
+  setVal('#cal-size', `${p.volante_w_mm}x${p.volante_h_mm}`);
+  setVal('#cal-jogos-volante', p.jogos_por_volante || 3);
   setVal('#cal-offset-x', p.offset_x_mm);
   setVal('#cal-offset-y', p.offset_y_mm);
   setVal('#cal-col-step', p.col_step_mm);
@@ -943,15 +986,17 @@ function loadCalibrationInputs() {
   setVal('#cal-qty-y', p.qty_offset_y_mm);
   setVal('#cal-qty-x', p.qty_start_x_mm);
   setVal('#cal-qty-step', p.qty_step_x_mm);
-  setVal('#cal-size', `${p.volante_w_mm}x${p.volante_h_mm}`);
+  updatePrintTypeUi();
 }
 
 function saveCalibrationInputs() {
-  const p = PrinterService.getProfile();
+  const tipo = PrinterService.getActiveType();
+  const p = PrinterService.getProfile(tipo);
   const numVal = (id, fallback) => {
     const v = parseFloat($(id)?.value);
     return Number.isFinite(v) ? v : fallback;
   };
+  p.jogos_por_volante = Math.min(3, Math.max(1, parseInt($('#cal-jogos-volante')?.value, 10) || 3));
   p.offset_x_mm = numVal('#cal-offset-x', p.offset_x_mm);
   p.offset_y_mm = numVal('#cal-offset-y', p.offset_y_mm);
   p.col_step_mm = numVal('#cal-col-step', p.col_step_mm);
@@ -972,16 +1017,17 @@ function saveCalibrationInputs() {
       p.volante_h_mm = h;
     }
   }
-  PrinterService.saveProfile(p);
+  PrinterService.saveProfile(p, tipo);
   buildSlipsPreview();
-  toast('Calibração milimétrica salva.');
+  toast(`Calibração salva para ${p.nome} (${p.volante_w_mm}×${p.volante_h_mm}mm).`);
 }
 
 function resetCalibrationInputs() {
-  PrinterService.resetProfile();
+  const tipo = PrinterService.getActiveType();
+  const p = PrinterService.resetProfile(tipo);
   loadCalibrationInputs();
   buildSlipsPreview();
-  toast('Calibração restaurada para o padrão oficial Caixa (83×185mm).');
+  toast(`Calibração restaurada para padrão ${p.nome} (${p.volante_w_mm}×${p.volante_h_mm}mm).`);
 }
 
 function executeCleanPrint(orientation, htmlContent) {
@@ -1012,8 +1058,10 @@ function executeCleanPrint(orientation, htmlContent) {
 }
 
 function printAlignmentTest() {
-  const payload = PrinterService.buildAlignmentTestPayload(PrinterService.getProfile());
-  executeCleanPrint('landscape', PrinterService.renderPrintArea(payload));
+  const prof = PrinterService.getProfile();
+  const payload = PrinterService.buildAlignmentTestPayload(prof);
+  const orient = payload.layout?.orientation || 'landscape';
+  executeCleanPrint(orient, PrinterService.renderPrintArea(payload));
 }
 
 function setPrintOrientation(mode) {
@@ -1048,7 +1096,8 @@ function printSlips() {
   }
   if (!state.slipsPayload) return;
 
-  executeCleanPrint('landscape', PrinterService.renderPrintArea(state.slipsPayload));
+  const orient = state.slipsPayload.layout?.orientation || 'landscape';
+  executeCleanPrint(orient, PrinterService.renderPrintArea(state.slipsPayload));
 }
 
 function imprimirListaJogos() {
@@ -1414,7 +1463,7 @@ async function atualizarResultadoCaixa(opts = {}) {
 async function loadInitialData() {
   // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json?v=2.42');
+    const resp = await fetch('data/concursos.json?v=2.43');
     if (resp.ok) {
       state.concursos = await resp.json();
     }
@@ -1580,6 +1629,11 @@ function bindEvents() {
 
   // Impressão
   loadCalibrationInputs();
+  $('#print-volante-tipo')?.addEventListener('change', (e) => {
+    PrinterService.setActiveType(e.target.value);
+    loadCalibrationInputs();
+    buildSlipsPreview();
+  });
   $('#btn-build-slips')?.addEventListener('click', buildSlipsPreview);
   $('#btn-print-slips')?.addEventListener('click', printSlips);
   $('#btn-print-test')?.addEventListener('click', printAlignmentTest);

@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.42 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.43 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -63,12 +63,19 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AN/            # Backup imutável V. 2.40
 ├── Backup_Versao_AO/            # Backup imutável V. 2.41
 ├── Backup_Versao_AP/            # Backup imutável V. 2.42
+├── Backup_Versao_AQ/            # Backup imutável V. 2.43
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.42)
+## Fluxos de Operação (V. 2.43)
 
-1. **Ordenação Completa e Destaque Visual no Backtesting Histórico**:
+1. **Perfis Separados de Impressão Óptica: Mega-Sena Tradicional (Dia a Dia) vs Mega da Virada**:
+   - Adicionado seletor `#print-volante-tipo` em `#sec-impressao` alternando entre dois perfis físicos independentes salvos separadamente no `localStorage`:
+     - **🟢 Mega-Sena Tradicional (Dia a Dia)**: padrão `83×185 mm`, `3 jogos/volante`, Teimosinha habilitada.
+     - **✨ Mega da Virada (Folha Especial)**: padrão `83×200 mm`, cabeçalho maior (`offset_y = 42mm`), `jogos_por_volante` configurável (`1..3`), Teimosinha automaticamente desativada.
+   - Removido travamento fixo `83mm × 185mm` no `@media print` (`styles.css`), substituído por variáveis CSS dinâmicas (`--slip-w`, `--slip-h`) com escolha automática de orientação (`A4 landscape` até `204mm` de altura, `A4 portrait` acima disso) e cálculo automático de volantes por folha.
+   - Calibração milimétrica (`#cal-jogos-volante` + 12 campos) e `Restaurar Padrão Caixa` operam de forma isolada por tipo de folha.
+2. **Ordenação Completa e Destaque Visual no Backtesting Histórico**:
    - Removido o corte `slice(0, 30)` das Quadras em `StatsEngine.runBacktesting()` para exibir todos os acertos encontrados.
    - Ordenação garantida de cima para baixo: **1º Sena (6) → 2º Quina (5) → 3º Quadra (4)**, e dentro de cada faixa estritamente do **maior concurso para o menor** (`Number(b.concurso) - Number(a.concurso)`).
    - Corrigida classe de badge em `renderBacktestingResult()` (`.badge-premio` + destaque de linha `.tr-award-*`) para realçar Sena, Quina e Quadra nos temas claro e escuro.
@@ -242,11 +249,15 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 - `getExcelHeatmapColor(value: number, min: number, max: number) -> string`: Gradiente de 3 cores estilo Excel (Verde -> Amarelo -> Vermelho).
 
 ### `printer_service.js` (Namespace `PrinterService`)
-- `getProfile() -> Object`: Perfil de calibração ativo.
-- `saveProfile(prof: Object) -> void`: Salva calibração no LocalStorage.
-- `buildSlipsPayload(games: Array, options?: Object) -> Object`: Agrupa jogos em volantes de até 3 e calcula coordenadas ópticas milimétricas.
-- `renderSlipSvg(slip: Object, profile: Object, showOutline?: boolean) -> string`: Gera SVG óptico oficial do volante Caixa.
-- `renderPrintArea(slipsPayload: Object) -> string`: Gera páginas A4 prontas para impressão óptica.
+- `getActiveType() -> string`: Retorna o tipo de folha ativo (`'tradicional'` ou `'virada'`).
+- `setActiveType(tipo: string) -> string`: Persiste o tipo de volante selecionado.
+- `getProfile(tipo?: string) -> Object`: Perfil de calibração ativo para o tipo de volante informado.
+- `saveProfile(prof: Object, tipo?: string) -> void`: Salva calibração independente no LocalStorage por tipo de volante.
+- `resetProfile(tipo?: string) -> Object`: Restaura medidas padrão do tipo de volante selecionado.
+- `getPageLayout(profile: Object) -> Object`: Calcula orientação (`landscape`/`portrait`) e volantes por folha conforme largura/altura em mm.
+- `buildSlipsPayload(games: Array, options?: Object) -> Object`: Agrupa jogos por `jogos_por_volante` e calcula coordenadas ópticas milimétricas.
+- `renderSlipSvg(slip: Object, profile: Object, opts?: Object) -> string`: Gera SVG óptico com dimensões dinâmicas do perfil.
+- `renderPrintArea(slipsPayload: Object) -> string`: Gera páginas A4 prontas para impressão óptica respeitando o tamanho real da folha.
 
 ### `firebase_sync.js` (Namespace `FirebaseSync`)
 - `init(callback: Function) -> void`: Inicializa conexão com Firebase ou LocalStorage.

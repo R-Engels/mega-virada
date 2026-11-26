@@ -1,32 +1,88 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.42 (Nuvem 24h Padrão)
- * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (83x185mm)
- * Prévia visual com grade de conferência + impressão óptica limpa para leitora
+ * Mega-Sena Potenza — V. 2.43 (Nuvem 24h Padrão)
+ * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (Tradicional vs Mega da Virada)
+ * Perfis independentes por tipo de folha + prévia visual + impressão óptica limpa para leitora
  */
 
 const PrinterService = (() => {
-  const DEFAULT_PROFILE = {
-    id: 1,
-    nome: 'Volante Oficial Caixa (3 Jogos)',
-    modo: 'a4_multiplos',
-    papel_w_mm: 210.0,
-    papel_h_mm: 297.0,
-    volante_w_mm: 83.0,
-    volante_h_mm: 185.0,
-    offset_x_mm: 8.0,
-    offset_y_mm: 31.0,
-    col_step_mm: 6.45,
-    row_step_mm: 5.3,
-    mark_w_mm: 4.2,
-    mark_h_mm: 2.0,
-    game_offsets: [0, 48.0, 96.0],
-    qty_offset_y_mm: 21.5,
-    qty_start_x_mm: 14.5,
-    qty_step_x_mm: 4.5,
-    teimosinha_pos: { x: 62.5, y: 21.5, w: 4.2, h: 2.0 },
-    padrao: true,
+  const DEFAULT_PROFILES = {
+    tradicional: {
+      id: 1,
+      tipo: 'tradicional',
+      nome: 'Mega-Sena Tradicional (Dia a Dia)',
+      modo: 'a4_multiplos',
+      papel_w_mm: 210.0,
+      papel_h_mm: 297.0,
+      volante_w_mm: 83.0,
+      volante_h_mm: 185.0,
+      jogos_por_volante: 3,
+      offset_x_mm: 8.0,
+      offset_y_mm: 31.0,
+      col_step_mm: 6.45,
+      row_step_mm: 5.3,
+      mark_w_mm: 4.2,
+      mark_h_mm: 2.0,
+      game_offsets: [0, 48.0, 96.0],
+      qty_offset_y_mm: 21.5,
+      qty_start_x_mm: 14.5,
+      qty_step_x_mm: 4.5,
+      permite_teimosinha: true,
+      teimosinha_pos: { x: 62.5, y: 21.5, w: 4.2, h: 2.0 },
+      padrao: true,
+    },
+    virada: {
+      id: 2,
+      tipo: 'virada',
+      nome: 'Mega da Virada (Folha Especial)',
+      modo: 'a4_multiplos',
+      papel_w_mm: 210.0,
+      papel_h_mm: 297.0,
+      volante_w_mm: 83.0,
+      volante_h_mm: 200.0,
+      jogos_por_volante: 3,
+      offset_x_mm: 8.0,
+      offset_y_mm: 42.0,
+      col_step_mm: 6.45,
+      row_step_mm: 5.3,
+      mark_w_mm: 4.2,
+      mark_h_mm: 2.0,
+      game_offsets: [0, 48.0, 96.0],
+      qty_offset_y_mm: 32.5,
+      qty_start_x_mm: 14.5,
+      qty_step_x_mm: 4.5,
+      permite_teimosinha: false,
+      teimosinha_pos: null,
+      padrao: true,
+    },
   };
+
+  const DEFAULT_PROFILE = DEFAULT_PROFILES.tradicional;
+  const TYPE_STORAGE_KEY = 'megasena_print_volante_tipo';
+
+  function normalizeType(tipo) {
+    return tipo === 'virada' ? 'virada' : 'tradicional';
+  }
+
+  function getActiveType() {
+    try {
+      return normalizeType(localStorage.getItem(TYPE_STORAGE_KEY));
+    } catch (e) {
+      return 'tradicional';
+    }
+  }
+
+  function setActiveType(tipo) {
+    const clean = normalizeType(tipo);
+    try {
+      localStorage.setItem(TYPE_STORAGE_KEY, clean);
+    } catch (e) {}
+    return clean;
+  }
+
+  function profileStorageKey(tipo) {
+    return `megasena_print_profile_${normalizeType(tipo)}`;
+  }
 
   function escapeXml(str) {
     if (!str) return '';
@@ -38,29 +94,52 @@ const PrinterService = (() => {
       .replace(/'/g, '&apos;');
   }
 
-  function getProfile() {
+  function getProfile(tipo = null) {
+    const t = normalizeType(tipo || getActiveType());
+    const base = DEFAULT_PROFILES[t];
     try {
-      const saved = localStorage.getItem('megasena_print_profile');
-      if (saved) return { ...DEFAULT_PROFILE, ...JSON.parse(saved) };
+      const saved = localStorage.getItem(profileStorageKey(t));
+      if (saved) return { ...base, ...JSON.parse(saved), tipo: t };
+      // Migração transparente da calibração legada para o perfil tradicional
+      if (t === 'tradicional') {
+        const legacy = localStorage.getItem('megasena_print_profile');
+        if (legacy) return { ...base, ...JSON.parse(legacy), tipo: t };
+      }
     } catch (e) {}
-    return { ...DEFAULT_PROFILE };
+    return { ...base };
   }
 
-  function saveProfile(prof) {
-    localStorage.setItem('megasena_print_profile', JSON.stringify(prof));
+  function saveProfile(prof, tipo = null) {
+    const t = normalizeType(tipo || prof?.tipo || getActiveType());
+    const merged = { ...DEFAULT_PROFILES[t], ...prof, tipo: t };
+    localStorage.setItem(profileStorageKey(t), JSON.stringify(merged));
   }
 
-  function resetProfile() {
-    localStorage.removeItem('megasena_print_profile');
-    return { ...DEFAULT_PROFILE };
+  function resetProfile(tipo = null) {
+    const t = normalizeType(tipo || getActiveType());
+    localStorage.removeItem(profileStorageKey(t));
+    if (t === 'tradicional') localStorage.removeItem('megasena_print_profile');
+    return { ...DEFAULT_PROFILES[t] };
+  }
+
+  function getPageLayout(profile) {
+    const w = Number(profile?.volante_w_mm) || 83.0;
+    const h = Number(profile?.volante_h_mm) || 185.0;
+    // Se a folha couber em A4 Paisagem (altura <= 204mm), imprime em paisagem; caso contrário usa A4 Retrato sem cortar
+    const orientation = h <= 204.0 ? 'landscape' : 'portrait';
+    const usableW = orientation === 'landscape' ? 285.0 : 198.0;
+    const slipsPerPage = Math.max(1, Math.min(3, Math.floor((usableW + 6.0) / (w + 6.0))));
+    return { orientation, slipsPerPage, w, h };
   }
 
   function buildSlipsPayload(games, options = {}) {
-    const prof = options.profile || getProfile();
-    const marcarTeimosinha = !!options.teimosinha;
-    const jogosPorVolante = Math.min(3, Math.max(1, options.jogosPorVolante || 3));
+    const tipo = normalizeType(options.tipo || options.profile?.tipo || getActiveType());
+    const prof = options.profile || getProfile(tipo);
+    const marcarTeimosinha = !!options.teimosinha && prof.permite_teimosinha !== false;
+    const jogosPorVolante = Math.min(3, Math.max(1, parseInt(options.jogosPorVolante || prof.jogos_por_volante, 10) || 3));
     const partMap = options.participantesMap || {};
     const concurso = options.concurso || '';
+    const layout = getPageLayout(prof);
 
     const slips = [];
     for (let i = 0; i < games.length; i += jogosPorVolante) {
@@ -75,7 +154,7 @@ const PrinterService = (() => {
           jogo.participante_nome = partMap[jogo.participante_id];
         }
 
-        const offsetY = prof.game_offsets[gIdx] || (gIdx * 48.0);
+        const offsetY = prof.game_offsets[gIdx] ?? (gIdx * 48.0);
         const nums = jogo.dezenas || [];
 
         // Marcas dos números sorteados
@@ -96,7 +175,7 @@ const PrinterService = (() => {
           });
         });
 
-        // Marca de quantidade de dezenas (padrão 6)
+        // Marca de quantidade de dezenas (6..15)
         const qtd = nums.length;
         if (qtd >= 6 && qtd <= 15) {
           const qIdx = qtd - 6;
@@ -113,7 +192,7 @@ const PrinterService = (() => {
           });
         }
 
-        // Marca Teimosinha (se marcada)
+        // Marca Teimosinha (somente quando permitido pelo tipo de volante)
         if (marcarTeimosinha && prof.teimosinha_pos) {
           marks.push({
             type: 'teimosinha',
@@ -132,11 +211,13 @@ const PrinterService = (() => {
         jogos: chunk,
         marks: marks,
         concurso: concurso,
+        tipo: prof.tipo,
       });
     }
 
     return {
       profile: prof,
+      layout: layout,
       total_slips: slips.length,
       jogos_por_volante: jogosPorVolante,
       slips: slips,
@@ -145,22 +226,28 @@ const PrinterService = (() => {
 
   function buildAlignmentTestPayload(profile) {
     const prof = profile || getProfile();
-    const testGames = [
-      { global_index: 1, participante_nome: 'TESTE ALINHAMENTO J1', dezenas: [1, 10, 25, 36, 51, 60] },
-      { global_index: 2, participante_nome: 'TESTE ALINHAMENTO J2', dezenas: [1, 10, 25, 36, 51, 60] },
-      { global_index: 3, participante_nome: 'TESTE ALINHAMENTO J3', dezenas: [1, 10, 25, 36, 51, 60] },
-    ];
-    return buildSlipsPayload(testGames, { profile: prof, teimosinha: false });
+    const maxJ = Math.min(3, Math.max(1, parseInt(prof.jogos_por_volante, 10) || 3));
+    const tag = prof.tipo === 'virada' ? 'VIRADA' : 'TRADICIONAL';
+    const testGames = [];
+    for (let i = 1; i <= maxJ; i++) {
+      testGames.push({
+        global_index: i,
+        participante_nome: `TESTE ${tag} J${i}`,
+        dezenas: [1, 10, 25, 36, 51, 60],
+      });
+    }
+    return buildSlipsPayload(testGames, { profile: prof, teimosinha: false, jogosPorVolante: maxJ });
   }
 
-  // Gera HTML/SVG de 1 volante óptico oficial (83x185mm)
-  // opts: boolean (showOutline) ou { showOutline, isPreview }
+  // Gera HTML/SVG de 1 volante óptico oficial (dimensões dinâmicas do perfil ativo)
   function renderSlipSvg(slip, profile, opts = true) {
     const isPreview = typeof opts === 'object' ? !!opts.isPreview : false;
     const showOutline = typeof opts === 'object' ? opts.showOutline !== false : !!opts;
+    const isVirada = profile.tipo === 'virada';
 
-    const w = profile.volante_w_mm;
-    const h = profile.volante_h_mm;
+    const w = Number(profile.volante_w_mm) || 83.0;
+    const h = Number(profile.volante_h_mm) || 185.0;
+    const maxJ = Math.min(3, Math.max(1, parseInt(profile.jogos_por_volante, 10) || 3));
     const styleAttr = isPreview
       ? 'width:100%;height:auto;display:block;'
       : `width:${w}mm;height:${h}mm;display:block;`;
@@ -172,7 +259,12 @@ const PrinterService = (() => {
 
     // Cabeçalho exclusivo no topo (área livre do sensor óptico)
     if (isPreview) {
-      svg += `<rect x="2.5" y="2" width="${(w - 5).toFixed(1)}" height="14.5" rx="1.2" fill="#f8fafc" stroke="#e2e8f0" stroke-width="0.25"/>`;
+      const hdrFill = isVirada ? '#fefce8' : '#f8fafc';
+      const hdrStroke = isVirada ? '#fde047' : '#e2e8f0';
+      svg += `<rect x="2.5" y="2" width="${(w - 5).toFixed(1)}" height="14.5" rx="1.2" fill="${hdrFill}" stroke="${hdrStroke}" stroke-width="0.25"/>`;
+      if (isVirada) {
+        svg += `<text x="${(w - 4).toFixed(1)}" y="4.8" font-size="1.8" font-weight="800" text-anchor="end" fill="#a16207" font-family="Arial, sans-serif">MEGA DA VIRADA</text>`;
+      }
     }
     slip.jogos.forEach((jogo, idx) => {
       const rawNome = (jogo.participante_nome || 'PARTICIPANTE').toUpperCase().trim();
@@ -188,16 +280,19 @@ const PrinterService = (() => {
     if (isPreview) {
       const gridW = 9 * profile.col_step_mm + profile.mark_w_mm + 2.4;
       const gridH = 5 * profile.row_step_mm + profile.mark_h_mm + 2.4;
+      const titleColor = isVirada ? '#b45309' : '#059669';
+      const boxFill = isVirada ? '#fefce8' : '#f0fdf4';
+      const boxStroke = isVirada ? '#fcd34d' : '#bbf7d0';
 
-      [0, 1, 2].forEach((gIdx) => {
-        const offsetY = profile.game_offsets[gIdx] || (gIdx * 48.0);
+      for (let gIdx = 0; gIdx < maxJ; gIdx++) {
+        const offsetY = profile.game_offsets[gIdx] ?? (gIdx * 48.0);
         const isUsed = gIdx < slip.jogos.length;
         const opacity = isUsed ? 1 : 0.35;
 
         svg += `<g opacity="${opacity}">`;
         // Faixa de título e Qtd do bloco
         const qtyY = profile.qty_offset_y_mm + offsetY;
-        svg += `<text x="${profile.offset_x_mm}" y="${(qtyY - 1.2).toFixed(1)}" font-size="2.1" font-weight="700" fill="#059669" font-family="Arial, sans-serif">JOGO ${gIdx + 1}</text>`;
+        svg += `<text x="${profile.offset_x_mm}" y="${(qtyY - 1.2).toFixed(1)}" font-size="2.1" font-weight="700" fill="${titleColor}" font-family="Arial, sans-serif">JOGO ${gIdx + 1}</text>`;
         svg += `<text x="${(profile.qty_start_x_mm - 5.5).toFixed(1)}" y="${(qtyY + 1.6).toFixed(1)}" font-size="1.7" fill="#64748b" font-family="Arial, sans-serif">Qtd</text>`;
 
         // Caixinhas de quantidade (6..15)
@@ -208,7 +303,7 @@ const PrinterService = (() => {
         }
 
         // Moldura suave do volante (60 dezenas)
-        svg += `<rect x="${(profile.offset_x_mm - 1.2).toFixed(2)}" y="${(profile.offset_y_mm + offsetY - 1.2).toFixed(2)}" width="${gridW.toFixed(2)}" height="${gridH.toFixed(2)}" rx="1" fill="#f0fdf4" fill-opacity="0.45" stroke="#bbf7d0" stroke-width="0.3"/>`;
+        svg += `<rect x="${(profile.offset_x_mm - 1.2).toFixed(2)}" y="${(profile.offset_y_mm + offsetY - 1.2).toFixed(2)}" width="${gridW.toFixed(2)}" height="${gridH.toFixed(2)}" rx="1" fill="${boxFill}" fill-opacity="0.5" stroke="${boxStroke}" stroke-width="0.3"/>`;
 
         // 60 dezenas guia (01..60)
         for (let n = 1; n <= 60; n++) {
@@ -221,10 +316,11 @@ const PrinterService = (() => {
           svg += `<text x="${(nx + profile.mark_w_mm / 2).toFixed(2)}" y="${(ny + 1.55).toFixed(2)}" font-size="1.55" text-anchor="middle" fill="#64748b" font-family="Arial, sans-serif">${label}</text>`;
         }
         svg += `</g>`;
-      });
+      }
 
       // Legenda dimensional discreta no rodapé da prévia
-      svg += `<text x="${(w / 2).toFixed(1)}" y="${(h - 3).toFixed(1)}" font-size="2" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif">Volante Caixa ${w} × ${h} mm (Escala 1:1 na impressão)</text>`;
+      const tipoLbl = isVirada ? 'Mega da Virada' : 'Mega-Sena Tradicional';
+      svg += `<text x="${(w / 2).toFixed(1)}" y="${(h - 3).toFixed(1)}" font-size="1.95" text-anchor="middle" fill="#94a3b8" font-family="Arial, sans-serif">${tipoLbl} · ${w} × ${h} mm (${maxJ} jogos/folha)</text>`;
     }
 
     // Marcas ópticas pretas reais (retângulos preenchidos em preto puro #000000)
@@ -236,18 +332,21 @@ const PrinterService = (() => {
     return svg;
   }
 
-  // Gera o layout de página de impressão A4 Paisagem com até 3 volantes por folha (100% limpo p/ leitora)
+  // Gera o layout de página de impressão A4 respeitando exatamente as medidas em mm do tipo de volante
   function renderPrintArea(slipsPayload) {
     const prof = slipsPayload.profile;
     const slips = slipsPayload.slips;
+    const layout = slipsPayload.layout || getPageLayout(prof);
+    const pageClass = layout.orientation === 'portrait' ? 'slip-page a4-grid-page a4-portrait-slips' : 'slip-page a4-grid-page';
+    const cardStyle = `--slip-w:${layout.w}mm;--slip-h:${layout.h}mm;`;
     let html = '';
 
-    for (let p = 0; p < slips.length; p += 3) {
-      const pageSlips = slips.slice(p, p + 3);
-      html += `<div class="slip-page a4-grid-page">`;
+    for (let p = 0; p < slips.length; p += layout.slipsPerPage) {
+      const pageSlips = slips.slice(p, p + layout.slipsPerPage);
+      html += `<div class="${pageClass}">`;
       html += `<div class="a4-slips-row">`;
       pageSlips.forEach((s) => {
-        html += `<div class="slip-card">`;
+        html += `<div class="slip-card" style="${cardStyle}">`;
         html += renderSlipSvg(s, prof, { showOutline: true, isPreview: false });
         html += `</div>`;
       });
@@ -259,14 +358,18 @@ const PrinterService = (() => {
   }
 
   return {
+    getActiveType,
+    setActiveType,
     getProfile,
     saveProfile,
     resetProfile,
+    getPageLayout,
     buildSlipsPayload,
     buildAlignmentTestPayload,
     renderSlipSvg,
     renderPrintArea,
     DEFAULT_PROFILE,
+    DEFAULT_PROFILES,
   };
 })();
 

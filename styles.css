@@ -840,14 +840,14 @@ tr.row-cota-alerta {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
 
-  /* Impressão dos Volantes Ópticos em Folha A4 Paisagem (Até 3 volantes por folha) */
+  /* Impressão dos Volantes Ópticos em Folha A4 (dimensões dinâmicas: Tradicional vs Mega da Virada) */
   .slip-page {
     width: 297mm !important;
     height: 208mm !important;
     max-height: 208mm !important;
     box-sizing: border-box !important;
     margin: 0 !important;
-    padding: 6mm 8mm !important;
+    padding: 4mm 6mm !important;
     page-break-after: always !important;
     break-after: page !important;
     page-break-inside: avoid !important;
@@ -857,12 +857,17 @@ tr.row-cota-alerta {
     align-items: center !important;
     justify-content: center !important;
   }
+  .slip-page.a4-portrait-slips {
+    width: 210mm !important;
+    height: 295mm !important;
+    max-height: 295mm !important;
+  }
   .slip-page:last-child {
     page-break-after: auto !important;
     break-after: auto !important;
   }
   .a4-grid-page {
-    padding: 6mm 8mm !important;
+    padding: 4mm 6mm !important;
   }
   .a4-slips-row {
     display: flex !important;
@@ -875,12 +880,12 @@ tr.row-cota-alerta {
     height: 100% !important;
   }
   .slip-card {
-    width: 83mm !important;
-    height: 185mm !important;
-    max-width: 83mm !important;
-    max-height: 185mm !important;
+    width: var(--slip-w, 83mm) !important;
+    height: var(--slip-h, 185mm) !important;
+    max-width: var(--slip-w, 83mm) !important;
+    max-height: var(--slip-h, 185mm) !important;
     box-sizing: border-box !important;
-    flex: 0 0 83mm !important;
+    flex: 0 0 var(--slip-w, 83mm) !important;
     flex-shrink: 0 !important;
     border: none !important;
     box-shadow: none !important;
@@ -892,10 +897,10 @@ tr.row-cota-alerta {
     padding: 0 !important;
   }
   .slip-card svg.slip-svg {
-    width: 83mm !important;
-    height: 185mm !important;
-    max-width: 83mm !important;
-    max-height: 185mm !important;
+    width: var(--slip-w, 83mm) !important;
+    height: var(--slip-h, 185mm) !important;
+    max-width: var(--slip-w, 83mm) !important;
+    max-height: var(--slip-h, 185mm) !important;
     display: block !important;
   }
 
