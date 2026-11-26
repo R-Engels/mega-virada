@@ -1543,32 +1543,7 @@ tr.row-cota-alerta {
   align-items: center;
   gap: 8px;
 }
-.timing-ev-metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  gap: 8px;
-  margin-top: 10px;
-}
-.timing-metric {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 7px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.timing-metric span { font-size: 11px; color: var(--muted); }
-.timing-metric b { font-size: 16px; color: var(--text); }
-.timing-ev-rec { margin: 9px 0 6px; font-size: 12px; color: var(--text); line-height: 1.4; }
-.timing-sim-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  padding-top: 7px;
-  border-top: 1px dashed var(--border);
-}
+.timing-ev-rec { margin: 8px 0 0; font-size: 12px; color: var(--text); line-height: 1.4; }
 [data-theme="light"] .timing-ev-box.timing-aguardar { background: #fef2f2; }
 [data-theme="light"] .timing-ev-box.timing-regular  { background: #fffbeb; }
 [data-theme="light"] .timing-ev-box.timing-bom      { background: #ecfdf5; }

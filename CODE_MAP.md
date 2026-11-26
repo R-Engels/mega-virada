@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.37 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.38 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -58,12 +58,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AI/            # Backup imutável V. 2.35
 ├── Backup_Versao_AJ/            # Backup imutável V. 2.36
 ├── Backup_Versao_AK/            # Backup imutável V. 2.37
+├── Backup_Versao_AL/            # Backup imutável V. 2.38
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.37)
+## Fluxos de Operação (V. 2.38)
 
-1. **Semáforo "Melhor Momento de Jogar" (EV+ Acumuladas), Steiner Packing Aprimorado e Peso Opcional Era Moderna (`#1115+`)**:
+1. **Semáforo "Melhor Momento de Jogar" Enxuto (Somente Concurso Atual)**:
+   - Removidos do painel `#timing-ev-panel` os 4 cartões percentuais de EV (`Retorno Potenza`, `vs Concurso Comum`, `Vantagem Anti-Divisão`, `Retorno Jogador Datas`) e a barra de simulação manual (`Simular outro prêmio` / `Mega da Virada`).
+   - Painel mantém apenas o veredito direto do próximo concurso atual (semáforo, prêmio estimado, sequência de acumuladas, contagem para Final 0/5 e recomendação prática).
+2. **Semáforo "Melhor Momento de Jogar" (EV+ Acumuladas), Steiner Packing Aprimorado e Peso Opcional Era Moderna (`#1115+`)**:
    - Adicionado `StatsEngine.evaluateDrawTiming(concursos, customJackpotM, isVirada)` e painel `#timing-ev-panel` em `#sec-fechamento` com semáforo de 4 níveis (`🔴 AGUARDAR`, `🟡 REGULAR`, `🟢 BOM MOMENTO`, `🚀 MOMENTO DE OURO`), detecção automática de sequência de acumuladas, bônus `Final 0/5 (+22%)`, `Mega da Virada`, cálculo real de Retorno Esperado (`EV%`) com divisão Poisson (Datas `≤31` vs Motor Potenza Anti-Divisão) e simulador rápido de prêmio.
    - Orçamento do Steiner-Packing SA elevado (`maxSwaps` até 12.000 / `260ms`), aumentando a taxa de pares únicos em `112×6` mantendo `Ov3+ = 0`.
    - Adicionado peso opcional `StatsEngine.getModernEraBayesWeights(concursos, beta)` (`🧬 Peso Globo Moderno #1115+`) baseado na persistência observada pós-2009 (`p=0,002` em permutação nula), preservando 100% da cobertura `60/60` dezenas.
@@ -247,5 +251,5 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 - `togglePagamento(partId: number)`: Alterna status PAGO / PENDENTE instantaneamente.
 - `updateFechamentoGerarState()`: Habilita `⚡ Gerar Fechamento` somente quando há `>= k + 1` dezenas selecionadas manualmente.
 - `gerarPorOrcamentoUi()`: Monta carteira 60/60 por orçamento (`misto`, `freq6`, `eq7`).
-- `renderTimingPanel(customJackpotM?: number, isViradaOverride?: boolean)`: Atualiza o semáforo EV+ de Melhor Momento de Jogar.
+- `renderTimingPanel()`: Atualiza o semáforo de Melhor Momento de Jogar para o próximo concurso atual.
 - `gerarFechamentoUi()`: Gera fechamento exclusivamente a partir das dezenas selecionadas manualmente pelo usuário.
