@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.41 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.42 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -774,12 +774,13 @@ const StatsEngine = (() => {
       if (wonThisDraw) concursosPremiados++;
     }
 
-    // Ordena mais recentes primeiro em cada faixa
-    senasList.sort((a, b) => b.concurso - a.concurso);
-    quinasList.sort((a, b) => b.concurso - a.concurso);
-    quadrasList.sort((a, b) => b.concurso - a.concurso);
+    // Ordena de cima para baixo: 1º Sena (6), 2º Quina (5), 3º Quadra (4), cada faixa do maior concurso para o menor (sem truncar)
+    const byConcursoDesc = (a, b) => (Number(b.concurso) - Number(a.concurso)) || (a.jogo_idx - b.jogo_idx);
+    senasList.sort(byConcursoDesc);
+    quinasList.sort(byConcursoDesc);
+    quadrasList.sort(byConcursoDesc);
 
-    const topHits = [...senasList, ...quinasList, ...quadrasList.slice(0, 30)];
+    const topHits = [...senasList, ...quinasList, ...quadrasList];
 
     return {
       total_concursos: totalConcursos,

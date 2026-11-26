@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.41 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.42 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1414,7 +1414,7 @@ async function atualizarResultadoCaixa(opts = {}) {
 async function loadInitialData() {
   // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json?v=2.41');
+    const resp = await fetch('data/concursos.json?v=2.42');
     if (resp.ok) {
       state.concursos = await resp.json();
     }
@@ -1704,8 +1704,12 @@ function renderBacktestingResult(containerEl, bt, titulo) {
     ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Inclui prêmios múltiplos oficiais Caixa para jogos de 7+ dezenas.</div>`
     : '';
 
-  const rowsHtml = bt.top_hits.length
-    ? bt.top_hits
+  const sortedHits = (bt.top_hits || [])
+    .slice()
+    .sort((a, b) => (b.qtd_acertos - a.qtd_acertos) || (Number(b.concurso) - Number(a.concurso)) || (a.jogo_idx - b.jogo_idx));
+
+  const rowsHtml = sortedHits.length
+    ? sortedHits
         .map((h) => {
           const drawSet = new Set(h.sorteadas || []);
           const balls = (h.dezenas || [])
@@ -1716,11 +1720,11 @@ function renderBacktestingResult(containerEl, bt, titulo) {
             ? ` <small style="color:var(--muted)">(${h.premios_mult.senas ? h.premios_mult.senas + 'S ' : ''}${h.premios_mult.quinas ? h.premios_mult.quinas + 'Q5 ' : ''}${h.premios_mult.quadras ? h.premios_mult.quadras + 'Q4' : ''})</small>`
             : '';
           return `
-            <tr>
+            <tr class="tr-award-${badgeClass}">
               <td><b>#${h.concurso}</b><br><small class="muted">${h.data}</small></td>
               <td>${h.participante_nome} <small class="muted">(Jogo #${h.jogo_idx})</small></td>
               <td><div style="display:flex;flex-wrap:wrap;gap:3px">${balls}</div></td>
-              <td style="text-align:center"><span class="award-badge ${badgeClass}">${h.faixa} (${h.qtd_acertos})</span>${multTxt}</td>
+              <td style="text-align:center"><span class="badge-premio ${badgeClass}">${h.faixa} (${h.qtd_acertos})</span>${multTxt}</td>
             </tr>
           `;
         })
@@ -1759,7 +1763,7 @@ function renderBacktestingResult(containerEl, bt, titulo) {
         <div class="bt-sub">Ternos: ${bt.ternos}</div>
       </div>
     </div>
-    <div class="table-wrap" style="max-height:260px;overflow-y:auto">
+    <div class="table-wrap" style="max-height:340px;overflow-y:auto">
       <table>
         <thead>
           <tr>

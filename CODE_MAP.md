@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.41 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.42 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -62,12 +62,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AM/            # Backup imutável V. 2.39
 ├── Backup_Versao_AN/            # Backup imutável V. 2.40
 ├── Backup_Versao_AO/            # Backup imutável V. 2.41
+├── Backup_Versao_AP/            # Backup imutável V. 2.42
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.41)
+## Fluxos de Operação (V. 2.42)
 
-1. **Tendência Globo Moderno (`#1115+`) Silenciosa por Padrão**:
+1. **Ordenação Completa e Destaque Visual no Backtesting Histórico**:
+   - Removido o corte `slice(0, 30)` das Quadras em `StatsEngine.runBacktesting()` para exibir todos os acertos encontrados.
+   - Ordenação garantida de cima para baixo: **1º Sena (6) → 2º Quina (5) → 3º Quadra (4)**, e dentro de cada faixa estritamente do **maior concurso para o menor** (`Number(b.concurso) - Number(a.concurso)`).
+   - Corrigida classe de badge em `renderBacktestingResult()` (`.badge-premio` + destaque de linha `.tr-award-*`) para realçar Sena, Quina e Quadra nos temas claro e escuro.
+2. **Tendência Globo Moderno (`#1115+`) Silenciosa por Padrão**:
    - Removida a caixa de seleção `#fech-modern-bayes` da UI e o sufixo textual `Globo Moderno #1115+` da descrição; o peso Bayesiano suave da Era Moderna permanece aplicado automaticamente em todo o motor mantendo cobertura `60/60`.
 2. **Sincronização Automática Caixa ao Abrir (CORS Corrigido + Preenchimento de Lacunas + Data do Próximo Sorteio)**:
    - Corrigido CORS na consulta online: substituído `api.guidi.dev.br` (sem header `Access-Control-Allow-Origin`) por cadeia com fallback CORS `ACAO: *` (`loteriascaixa-api.herokuapp.com` → `servicebus2.caixa.gov.br` oficial → `api.guidi.dev.br`).
