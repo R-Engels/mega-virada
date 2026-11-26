@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.34 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.35 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1537,6 +1537,7 @@ function bindEvents() {
     const box = $('#fech-results-box');
     if (box) box.style.display = 'none';
   });
+  $('#btn-fech-budget')?.addEventListener('click', gerarPorOrcamentoUi);
   $('#btn-fech-auto')?.addEventListener('click', gerarMelhorFechamentoAuto);
   $('#btn-fech-gerar')?.addEventListener('click', gerarFechamentoUi);
   $('#btn-fech-add-bolao')?.addEventListener('click', adicionarFechamentoAoBolao);
@@ -1885,6 +1886,77 @@ window.selecionarOpcaoFechamento = function (k, garantia) {
   if (gEl) gEl.value = String(garantia);
   gerarFechamentoUi();
 };
+
+function gerarPorOrcamentoUi() {
+  const budget = parseFloat($('#fech-budget-val')?.value) || 650;
+  const perfil = $('#fech-budget-profile')?.value || 'misto';
+  const lastDraw = state.concursos && state.concursos.length ? state.concursos[state.concursos.length - 1] : null;
+  try {
+    const res = StatsEngine.generateByBudget(budget, perfil, lastDraw, state.concursos || []);
+    // Compatível com botão Adicionar ao Bolão e Backtesting!
+    state.fechamentoResult = {
+      v: res.dezenas_cobertas,
+      k: res.jogos[0]?.length || 6,
+      garantia: perfil === 'fechamento' ? 5 : 4,
+      jogos: res.jogos,
+      total_jogos: res.total_jogos,
+      custo_total: res.custo_total,
+      descricao: res.descricao,
+    };
+
+    const box = $('#fech-results-box');
+    const kpis = $('#fech-kpis');
+    const list = $('#fech-games-list');
+    const btBox = $('#fech-backtesting-box');
+    const cmpBox = $('#fech-auto-compare');
+    if (btBox) btBox.style.display = 'none';
+    if (box) box.style.display = 'block';
+    if (cmpBox) {
+      cmpBox.style.display = 'block';
+      cmpBox.innerHTML = `<div class="backtesting-panel" style="margin-top:0"><strong>💰 ${res.descricao}</strong> · <span class="muted">Dezenas cobertas: ${res.dezenas_cobertas}/60 · Pares únicos: ${res.pares_unicos_pct}% · Média &gt;31: ${res.media_over31}</span></div>`;
+    }
+    if (kpis) {
+      kpis.innerHTML = `
+        <div class="kpi">
+          <div class="label">Cartelas Geradas</div>
+          <div class="value">${res.total_jogos}</div>
+          <div class="sub-label">${res.combinacoes_eq6} combinações eq. de 6 dez.</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Custo Total</div>
+          <div class="value" style="color:var(--accent)">R$ ${res.custo_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div class="sub-label">Orçamento: R$ ${res.orcamento.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Chance Real (Sena)</div>
+          <div class="value" style="color:var(--warn)">1 em ${(res.chance_sena_1_em / 1000).toFixed(0)}k</div>
+          <div class="sub-label">Quadra: ~1 em ${res.chance_quadra_1_em} concursos</div>
+        </div>
+        <div class="kpi">
+          <div class="label">Pares Únicos (Steiner)</div>
+          <div class="value" style="color:var(--accent)">${res.pares_unicos_pct}%</div>
+          <div class="sub-label">Cobertura: ${res.dezenas_cobertas}/60 dezenas</div>
+        </div>
+      `;
+    }
+    if (list) {
+      list.innerHTML = res.jogos
+        .map((j, idx) => {
+          const balls = j.map((d) => `<span class="ball">${String(d).padStart(2, '0')}</span>`).join('');
+          return `
+            <div class="fech-game-item">
+              <span class="fech-game-idx">#${idx + 1}</span>
+              <div class="fech-game-balls">${balls}</div>
+            </div>
+          `;
+        })
+        .join('');
+    }
+    toast(`Carteira montada: ${res.total_jogos} jogos (R$ ${res.custo_total.toFixed(2)}) — ${res.pares_unicos_pct}% pares únicos!`);
+  } catch (err) {
+    toast(err.message || 'Erro ao montar por orçamento.', true);
+  }
+}
 
 function autoCompletarDezenasFechamento(alvoQtd = 12) {
   const scored = StatsEngine.scoreNumbers(state.concursos || [], 100);

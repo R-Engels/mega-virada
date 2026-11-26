@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.34</title>
-  <link rel="stylesheet" href="styles.css?v=2.34" />
+  <title>Mega-Sena Potenza — V. 2.35</title>
+  <link rel="stylesheet" href="styles.css?v=2.35" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
   <header class="topbar no-print">
     <div class="brand">
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.34</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.35</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -219,6 +219,26 @@
         <span id="fech-sel-count" class="badge">Selecionadas: 0 / 20</span>
       </div>
 
+      <!-- Otimizador por Orçamento (R$) — Steiner Packing + Matrizes Recordes -->
+      <div class="fech-controls-bar" style="margin-bottom:10px">
+        <label class="fech-ctrl-item">
+          <span>Orçamento do Bolão (R$)</span>
+          <input type="number" id="fech-budget-val" min="36" max="20000" step="10" value="650" style="width:120px" />
+        </label>
+        <label class="fech-ctrl-item">
+          <span>Estratégia pelo Orçamento</span>
+          <select id="fech-budget-profile">
+            <option value="misto">⚖️ Misto Inteligente (7 dez. + 6 dez.)</option>
+            <option value="freq6">🎯 Máx. Frequência (Steiner 6 dez.)</option>
+            <option value="eq7">🔥 Equilibrado (Steiner 7 dez. — 3× Quadra)</option>
+            <option value="fechamento">💎 Melhor Fechamento Recorde no Orçamento</option>
+          </select>
+        </label>
+        <div class="fech-quick-btns">
+          <button id="btn-fech-budget" class="btn btn-primary" title="Monta automaticamente a melhor carteira matemática dentro do orçamento informado">💰 Montar por Orçamento</button>
+        </div>
+      </div>
+
       <div class="fech-controls-bar">
         <label class="fech-ctrl-item">
           <span>Dezenas por Jogo</span>
@@ -357,10 +377,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.34 -->
-  <script src="stats_engine.js?v=2.34"></script>
-  <script src="printer_service.js?v=2.34"></script>
-  <script src="firebase_sync.js?v=2.34"></script>
-  <script src="app.js?v=2.34"></script>
+  <!-- Módulos da Aplicação V. 2.35 -->
+  <script src="stats_engine.js?v=2.35"></script>
+  <script src="printer_service.js?v=2.35"></script>
+  <script src="firebase_sync.js?v=2.35"></script>
+  <script src="app.js?v=2.35"></script>
 </body>
 </html>

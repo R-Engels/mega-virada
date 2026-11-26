@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.34 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.35 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -446,7 +446,7 @@ const StatsEngine = (() => {
       });
     }
 
-    // Pós-otimização Global 1-Swap (Packing anti-sobreposição + equilíbrio anti-divisão >31)
+    // Pós-otimização Steiner-Packing SA Direcionado a Conflitos (95%–100% pares únicos, Ov3+=0, Anti-Divisão >31)
     if (generated.length >= 2 && fixed.length === 0 && excludeNums.size === 0) {
       const antiDivScore = (arr) => {
         let sc = 0, o31 = 0, l12 = 0, m5 = 0;
@@ -488,66 +488,95 @@ const StatsEngine = (() => {
       const targetF = new Float64Array(61);
       for (let n = 1; n <= 60; n++) targetF[n] = baseTarget * (n > 31 ? 1.15 : 0.86);
 
-      const maxSwaps = Math.min(4500, generated.length * 55);
-      for (let it = 0; it < maxSwaps; it++) {
+      const tStartSwap = Date.now();
+      const maxBudgetMs = Math.min(180, Math.max(25, generated.length * 2));
+      const maxSwaps = Math.min(6000, generated.length * 75);
+      let temp = 1.2;
+
+      for (let it = 0; it < maxSwaps && (Date.now() - tStartSwap) < maxBudgetMs; it++) {
         const gi = baseCount + Math.floor(Math.random() * generated.length);
         const gArr = allGames[gi];
-        const pos = Math.floor(Math.random() * kLen);
-        const oldN = gArr[pos];
-        const newN = 1 + Math.floor(Math.random() * 60);
-        if (oldN === newN || gArr.includes(newN)) continue;
 
-        const nextArr = gArr.slice();
-        nextArr[pos] = newN;
-        nextArr.sort((a, b) => a - b);
-        const nextSig = nextArr.join('-');
-        if (sigAll.has(nextSig)) continue;
-        if (rules.apply_filters && !checkFilters(nextArr, lastDraw, rules)) continue;
-
-        const oldM = allMasks[gi];
-        const nextM = encodeBitmask(nextArr);
-
-        let dOv3 = 0, dOv4 = 0;
-        for (let j = 0; j < totalM; j++) {
-          if (j === gi) continue;
-          const oOld = popcount32(oldM[0] & allMasks[j][0]) + popcount32(oldM[1] & allMasks[j][1]);
-          const oNew = popcount32(nextM[0] & allMasks[j][0]) + popcount32(nextM[1] & allMasks[j][1]);
-          if (oOld === 3) dOv3--; else if (oOld >= 4) dOv4--;
-          if (oNew === 3) dOv3++; else if (oNew >= 4) dOv4++;
-        }
-        if (dOv3 > 0 || dOv4 > 0) continue;
-
-        const dFreqVar =
-          (Math.pow(nf[oldN] - 1 - targetF[oldN], 2) - Math.pow(nf[oldN] - targetF[oldN], 2)) +
-          (Math.pow(nf[newN] + 1 - targetF[newN], 2) - Math.pow(nf[newN] - targetF[newN], 2));
-
-        let dDupPairs = 0;
+        // Seleciona posição com maior conflito de pares repetidos (Steiner conflict-directed!)
+        let pos = Math.floor(Math.random() * kLen);
+        let worstRep = -1;
         for (let i = 0; i < kLen; i++) {
-          if (i === pos) continue;
-          const other = gArr[i];
-          const p1 = pf[Math.min(oldN, other) * 61 + Math.max(oldN, other)];
-          if (p1 > 1) dDupPairs += Math.pow(p1 - 2, 2) - Math.pow(p1 - 1, 2);
-          const p2 = pf[Math.min(newN, other) * 61 + Math.max(newN, other)];
-          if (p2 >= 1) dDupPairs += Math.pow(p2, 2) - Math.pow(p2 - 1, 2);
+          let rep = 0;
+          for (let j = 0; j < kLen; j++) {
+            if (i === j) continue;
+            const a = Math.min(gArr[i], gArr[j]), b = Math.max(gArr[i], gArr[j]);
+            if (pf[a * 61 + b] > 1) rep += pf[a * 61 + b] - 1;
+          }
+          if (rep > worstRep) { worstRep = rep; pos = i; }
+        }
+        if (worstRep === 0 && Math.random() < 0.5) pos = Math.floor(Math.random() * kLen);
+
+        const oldN = gArr[pos];
+        let bestNewN = -1, bestDE = 1e9, bestNextArr = null, bestNextM = null;
+
+        // Avalia 6 candidatos rápidos e escolhe o melhor movimento
+        for (let c = 0; c < 6; c++) {
+          const newN = 1 + Math.floor(Math.random() * 60);
+          if (newN === oldN || gArr.includes(newN)) continue;
+
+          const dFreqVar =
+            (Math.pow(nf[oldN] - 1 - targetF[oldN], 2) - Math.pow(nf[oldN] - targetF[oldN], 2)) +
+            (Math.pow(nf[newN] + 1 - targetF[newN], 2) - Math.pow(nf[newN] - targetF[newN], 2));
+
+          let dDupPairs = 0;
+          for (let i = 0; i < kLen; i++) {
+            if (i === pos) continue;
+            const other = gArr[i];
+            const p1 = pf[Math.min(oldN, other) * 61 + Math.max(oldN, other)];
+            if (p1 > 1) dDupPairs += Math.pow(p1 - 2, 2) - Math.pow(p1 - 1, 2);
+            const p2 = pf[Math.min(newN, other) * 61 + Math.max(newN, other)];
+            if (p2 >= 1) dDupPairs += Math.pow(p2, 2) - Math.pow(p2 - 1, 2);
+          }
+
+          const approxDE = dDupPairs * 45.0 + dFreqVar * 5.0;
+          if (approxDE >= bestDE && bestNewN !== -1) continue;
+
+          const nextArr = gArr.slice();
+          nextArr[pos] = newN;
+          nextArr.sort((a, b) => a - b);
+          const nextSig = nextArr.join('-');
+          if (sigAll.has(nextSig)) continue;
+          if (rules.apply_filters && !checkFilters(nextArr, lastDraw, rules)) continue;
+
+          const oldM = allMasks[gi];
+          const nextM = encodeBitmask(nextArr);
+          let dOv3 = 0, dOv4 = 0;
+          for (let j = 0; j < totalM; j++) {
+            if (j === gi) continue;
+            const oOld = popcount32(oldM[0] & allMasks[j][0]) + popcount32(oldM[1] & allMasks[j][1]);
+            const oNew = popcount32(nextM[0] & allMasks[j][0]) + popcount32(nextM[1] & allMasks[j][1]);
+            if (oOld === 3) dOv3--; else if (oOld >= 4) dOv4--;
+            if (oNew === 3) dOv3++; else if (oNew >= 4) dOv4++;
+          }
+          if (dOv3 > 0 || dOv4 > 0) continue;
+
+          const dAnti = antiDivScore(nextArr) - antiDivScore(gArr);
+          const dE = dDupPairs * 45.0 + dFreqVar * 5.0 + dOv3 * 120.0 + dOv4 * 500.0 - dAnti * 1.4;
+          if (dE < bestDE) {
+            bestDE = dE; bestNewN = newN; bestNextArr = nextArr; bestNextM = nextM;
+          }
         }
 
-        const dAnti = antiDivScore(nextArr) - antiDivScore(gArr);
-        const dE = dDupPairs * 32.0 + dFreqVar * 6.0 + dOv3 * 120.0 + dOv4 * 500.0 - dAnti * 1.4;
-
-        if (dE < -1e-6) {
+        if (bestNewN !== -1 && (bestDE < -1e-6 || (bestDE <= 2.0 && Math.random() < Math.exp(-bestDE / Math.max(0.08, temp)) * 0.15))) {
           sigAll.delete(gArr.join('-'));
-          sigAll.add(nextSig);
+          sigAll.add(bestNextArr.join('-'));
           nf[oldN]--;
-          nf[newN]++;
+          nf[bestNewN]++;
           for (let i = 0; i < kLen; i++) {
             if (i === pos) continue;
             const other = gArr[i];
             pf[Math.min(oldN, other) * 61 + Math.max(oldN, other)]--;
-            pf[Math.min(newN, other) * 61 + Math.max(newN, other)]++;
+            pf[Math.min(bestNewN, other) * 61 + Math.max(bestNewN, other)]++;
           }
-          allGames[gi] = nextArr;
-          allMasks[gi] = nextM;
+          allGames[gi] = bestNextArr;
+          allMasks[gi] = bestNextM;
         }
+        temp *= 0.9992;
       }
 
       for (let i = 0; i < generated.length; i++) {
@@ -779,32 +808,32 @@ const StatsEngine = (() => {
     return out;
   }
 
-  // Catálogo de 39 matrizes canônicas Dual-Otimizadas (100% garantia m=6 + cobertura máxima m=4/m=5 via SA)
+  // Catálogo de 39 matrizes canônicas Recordes (Tabu+SA Longo Prazo + Cobertura Secundária m=4/m=5)
   const OPTIMAL_COVERING_MATRICES = {
     '9_6_4': [190,455,377],
     '10_6_4': [444,965,603],
     '11_6_4': [946,1985,126,1593,1167],
     '12_6_4': [63,1985,2254,3888,2289,1806],
-    '13_6_4': [63,1477,6279,6984,7458,1644,6384,1619,937,1690,7444],
-    '14_6_4': [1985,14406,6552,11816,12976,5383,8562,1244,6787,11537,9060,9386,7280,4427,2221,543],
-    '15_6_4': [16415,1761,15620,10696,28848,5460,10298,19745,26124,9365,20684,3207,952,2662,17298,6681,8549,19538,5418,12867,23297],
-    '16_6_4': [33039,7329,26192,25056,54020,14358,51352,41603,44289,37992,17493,13450,18985,4564,948,3378,1566,61474,32883,50340,10444,24857,47680,3174,22856,22659,12844,963,18186,37401],
+    '13_6_4': [4175,2947,2268,1210,7224,3174,4945,1833,5348,4885],
+    '14_6_4': [1385,13347,7376,10382,4550,11800,8373,10518,2661,2977,1746,5900,4155,13128],
+    '15_6_4': [9928,6384,21542,8283,25649,17050,6174,19752,10790,1876,28748,13698,24065,4905,27520,231,3213,18755,8597],
+    '16_6_4': [33101,9128,13904,2868,51718,14476,35480,41493,27905,12870,16595,11395,17961,54144,4403,34146,37909,45130,7212,17636,1930,57624,43120,2219,22616,61600,16446,6849,1430],
     '8_6_5': [63,207,243,252],
     '9_6_5': [455,504,335,444,315,207,119],
     '10_6_5': [111,907,881,694,476,791,243,813,760,717,486,441,63,858],
     '11_6_5': [95,1191,811,1433,965,700,1738,1649,1388,1814,498,667,1257,1805,462,615,888,437,1954,1086,1363,1748],
-    '12_6_5': [303,1607,2251,3123,693,2841,1182,2950,1489,2668,3496,3792,1705,1803,1254,2205,2277,1145,3717,3149,1986,599,667,2390,3634,972,2913,3402,483,634,3380,1820,2606,1842,504,3461,343,2730,1892,2482],
+    '12_6_5': [303,1611,2251,3123,693,2841,1182,2950,1489,2680,3496,3792,1705,994,1254,2205,2532,3426,3717,3149,599,667,2390,2606,972,2913,1370,125,2275,3380,1820,3622,1842,504,1415,1393,3850,1892,2482],
     '10_7_4': [875,439,988],
     '11_7_4': [487,1627,1976],
     '12_7_4': [1863,3824,415,2862],
     '13_7_4': [127,8065,254,7942,5496],
     '14_7_4': [12161,7310,12658,877,11888,4763,925,12391],
-    '15_7_4': [431,13906,14520,20961,19022,25629,3554,11156,29203,1769,22306,7493],
-    '16_7_4': [1651,8065,30218,50088,52268,4582,57925,37021,10601,51475,1498,55408,10894,58530,14100],
+    '15_7_4': [4495,10728,22630,25869,3697,13846,29203,25797,18328],
+    '16_7_4': [9827,14209,23626,41784,19501,4582,25413,36895,51475,36056,55408,10894,58032,54548],
     '10_7_5': [127,911,1009,758,382],
     '11_7_5': [859,1763,1948,1912,1383,997,1246,443,1245,575],
-    '12_7_5': [127,1927,3056,3275,3444,3635,2893,1246,1491,2478,757,1882,3229,1961,2867,3686,702],
-    '13_7_5': [575,3463,6505,4540,3659,5291,1395,2986,6362,5717,5422,5011,1497,2932,4327,6797,7960,7730,1957,6881,4942,7620,1750,2335,3308,5752,3253],
+    '12_7_5': [3355,1383,3246,2546,1987,607,3635,1957,445,1002,2966,2932,3916,2793,3285,1784],
+    '13_7_5': [635,6505,5436,3779,5515,1522,2986,6362,3865,6423,5041,477,2932,4327,6797,7730,1831,4942,5717,1694,7620,3182,5864,3253],
     '9_7_6': [127,415,487,505,254,382,431,463,439,471,251,379,253,381,506,508],
     '10_7_6': [799,223,491,979,877,631,702,382,988,953,998,253,747,911,890,1009,847,815,981,379,506,477,743,947,733,494,734,764,923,191,487,829,941,919,635,1002,375,502,985,886,949,755,623,995,446],
     '11_8_4': [999,1949,1914],
@@ -812,10 +841,10 @@ const StatsEngine = (() => {
     '13_8_4': [4006,7002,5245],
     '14_8_4': [255,16131,1020,15544],
     '15_8_4': [255,32513,19398,13436,11066,21675],
-    '16_8_4': [255,46753,27925,55920,59268,15418,49995,6606],
+    '16_8_4': [42661,27956,39633,13422,49995,22938],
     '11_8_5': [1515,2006,639,1469],
     '12_8_5': [2623,2036,383,3735,4072,3555,863,3231],
-    '13_8_5': [2301,7695,3960,5049,7374,1974,6331,7877,3389,4982,3019,5491,7621],
+    '13_8_5': [3516,7695,8098,5609,7374,4926,503,5845,6517,2925,2779,1907],
     '14_8_5': [1247,7943,10092,14684,13282,11493,5806,7286,10035,3001,12917,11722,7593,10910,15945,6100,8623,13434,14739,2907],
     '10_8_6': [383,759,943,1018,735,1017,983,1020,447,831,495,879],
     '11_8_6': [639,1463,2026,1661,1767,1726,1013,1406,1935,1275,1907,1517,955,1871,1020,495,2036,1823,1839,1014,1017,735,957,2003,1375,1886,1757,1977,1502],
@@ -1254,6 +1283,113 @@ const StatsEngine = (() => {
     return { best, comparativo };
   }
 
+  // Otimizador por Orçamento (R$): monta a melhor carteira matemática (Steiner Packing + Fechamentos Recordes)
+  function generateByBudget(orcamentoReais, perfil = 'misto', lastDraw = null, concursos = []) {
+    const budget = Math.max(36, Math.min(20000, Number(orcamentoReais) || 650));
+    const scored = scoreNumbers(concursos || [], 100);
+    const pickBalanced = (qtd) => {
+      const byQ = { 1: [], 2: [], 3: [], 4: [] };
+      scored.slice().sort((a, b) => b.score - a.score).forEach((x) => byQ[getQuadrant(x.dezena)].push(x.dezena));
+      const out = [];
+      for (let i = 0; out.length < qtd && i < 120; i++) {
+        const n = byQ[(i % 4) + 1].shift();
+        if (n) out.push(n);
+      }
+      return out.sort((a, b) => a - b);
+    };
+
+    let jogos = [];
+    let descricao = '';
+    let custoTotal = 0;
+    let combinacoesEq6 = 0;
+
+    if (perfil === 'misto') {
+      // ~60% em jogos de 7 dez (multiplicador 3x Quadra / 2x Quina) + ~40% em jogos de 6 dez (alta cobertura 60 dez)
+      const qtd7 = Math.floor((budget * 0.6) / 42);
+      const rem = budget - qtd7 * 42;
+      const qtd6 = Math.floor(rem / 6);
+      const g7 = qtd7 > 0 ? generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      const g6 = qtd6 > 0 ? generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      jogos = [...g7, ...g6];
+      custoTotal = g7.length * 42 + g6.length * 6;
+      combinacoesEq6 = g7.length * 7 + g6.length;
+      descricao = `Misto Inteligente: ${g7.length} jogo(s) de 7 dez. + ${g6.length} jogo(s) de 6 dez.`;
+    } else if (perfil === 'freq6') {
+      const qtd6 = Math.floor(budget / 6);
+      jogos = generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, last_draw: lastDraw }).jogos.map((j) => j.dezenas);
+      custoTotal = jogos.length * 6;
+      combinacoesEq6 = jogos.length;
+      descricao = `Máxima Frequência (Steiner 6 dez.): ${jogos.length} jogos cobrindo 60 dezenas`;
+    } else if (perfil === 'eq7') {
+      const qtd7 = Math.max(1, Math.floor(budget / 42));
+      const g7 = generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw }).jogos.map((j) => j.dezenas);
+      const rem6 = Math.floor((budget - g7.length * 42) / 6);
+      const g6 = rem6 > 0 ? generatePotenzaGames({ quantidade: rem6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      jogos = [...g7, ...g6];
+      custoTotal = g7.length * 42 + g6.length * 6;
+      combinacoesEq6 = g7.length * 7 + g6.length;
+      descricao = `Equilibrado 7 dez. (Steiner): ${g7.length} jogos de 7 dez.${g6.length ? ' + ' + g6.length + ' de 6 dez.' : ''}`;
+    } else {
+      // Fechamento Recorde no Orçamento: escolhe a matriz recorde com MAIOR cobertura dentro do orçamento!
+      let bestFech = null;
+      const keys = Object.keys(OPTIMAL_COVERING_MATRICES);
+      for (let i = 0; i < keys.length; i++) {
+        const [v, k, g] = keys[i].split('_').map(Number);
+        const count = OPTIMAL_COVERING_MATRICES[keys[i]].length;
+        const cost = count * getBetPrice(k, 6);
+        if (cost <= budget) {
+          // Score: prioriza maior orçamento aproveitado + maior garantia + maior grupo v
+          const score = g * 1000 + cost * 2 + v * 25;
+          if (!bestFech || score > bestFech.score) {
+            bestFech = { v, k, g, cost, score };
+          }
+        }
+      }
+      if (!bestFech) bestFech = { v: 12, k: 6, g: 4 };
+      const sel = pickBalanced(bestFech.v);
+      const fRes = generateFechamento(sel, bestFech.k, bestFech.g, 6.0);
+      jogos = fRes.jogos;
+      custoTotal = fRes.custo_total;
+      combinacoesEq6 = jogos.reduce((acc, j) => acc + combInt(j.length, 6), 0);
+      const gName = bestFech.g === 6 ? 'Sena' : bestFech.g === 5 ? 'Quina' : 'Quadra';
+      descricao = `Fechamento Recorde ${bestFech.v}→${bestFech.k} dez. (${gName} 100%): ${fRes.total_jogos} jogos`;
+    }
+
+    // Métricas matemáticas exatas do portfólio gerado
+    const uniqNums = new Set();
+    const uniqPairs = new Set();
+    let totalPairsSlots = 0;
+    let sumOver31 = 0;
+    jogos.forEach((arr) => {
+      arr.forEach((n) => { uniqNums.add(n); if (n > 31) sumOver31++; });
+      totalPairsSlots += (arr.length * (arr.length - 1)) / 2;
+      for (let i = 0; i < arr.length; i++) {
+        for (let j = i + 1; j < arr.length; j++) {
+          uniqPairs.add(`${Math.min(arr[i], arr[j])}-${Math.max(arr[i], arr[j])}`);
+        }
+      }
+    });
+    const maxP = Math.min(1770, totalPairsSlots);
+    const pairCovPct = maxP > 0 ? Math.round((uniqPairs.size / maxP) * 1000) / 10 : 0;
+    const chanceSena1Em = combinacoesEq6 > 0 ? Math.round(50063860 / combinacoesEq6) : 50063860;
+    const chanceQuadra1Em = combinacoesEq6 > 0 ? Math.max(1, Math.round(2332 / combinacoesEq6)) : 2332;
+
+    return {
+      orcamento: budget,
+      perfil,
+      descricao,
+      jogos,
+      total_jogos: jogos.length,
+      custo_total: custoTotal,
+      combinacoes_eq6: combinacoesEq6,
+      dezenas_cobertas: uniqNums.size,
+      pares_unicos_pct: pairCovPct,
+      chance_sena_1_em: chanceSena1Em,
+      chance_quadra_1_em: chanceQuadra1Em,
+      media_over31: jogos.length ? Math.round((sumOver31 / jogos.length) * 100) / 100 : 0,
+    };
+  }
+
   return {
     getQuadrant,
     getBetPrice,
@@ -1266,6 +1402,7 @@ const StatsEngine = (() => {
     runBacktesting,
     generateFechamento,
     generateBestFechamento,
+    generateByBudget,
   };
 })();
 

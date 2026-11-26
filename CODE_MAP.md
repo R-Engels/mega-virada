@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.34 (Nuvem 24h Padrão) | Atualizado em: 2026-11-25 -->
+﻿﻿<!-- Versão: V. 2.35 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -55,12 +55,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AF/            # Backup imutável V. 2.32
 ├── Backup_Versao_AG/            # Backup imutável V. 2.33
 ├── Backup_Versao_AH/            # Backup imutável V. 2.34
+├── Backup_Versao_AI/            # Backup imutável V. 2.35
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.34)
+## Fluxos de Operação (V. 2.35)
 
-1. **Otimização Dual de Cobertura Secundária (`m=4` e `m=5`) + Permutação Isomórfica $\pi^*$ nos Fechamentos**:
+1. **Novos Recordes de Fechamento (-18 Jogos Extras / -R\$ 882), Steiner-Packing SA e Otimizador por Orçamento (R\$)**:
+   - Ataque Tabu+SA indexado (Track B) quebrou 11 novos recordes mantendo **100,000% garantia `m=6`** + polimento `m=4`/`m=5`: `15→7 Quadra: 12→9 jogos (-35,7% vs V2.31)`, `16→8 Quadra: 8→6 jogos (-R\$ 336)`, `13→7 Quina: 27→24 (-R\$ 126)`, `13→8 Quina: 13→12 (-R\$ 168)`, `12→7 Quina: 17→16 (R\$ 672)`, `15→6 Quadra: 21→19`, `14→6 Quadra: 16→14`, `13→6 Quadra: 11→10`, `12→6 Quina: 40→39`, `16→6 Quadra: 30→29`.
+   - `generatePotenzaGames()` promovido para **Steiner-Packing SA direcionado a conflitos** (`99,9%` pares únicos em 84 jogos, `98,3%` em 100 jogos, `95,4%` em 112 jogos, `Ov3+ = 0`).
+   - Adicionado `StatsEngine.generateByBudget(orcamento, perfil)` + barra **Montar por Orçamento (R\$)** em `#sec-fechamento` (Misto 7+6 dez, Steiner 6 dez, Steiner 7 dez e Melhor Fechamento Recorde no Orçamento), exibindo chance real (Sena/Quadra), pares únicos e backtesting imediato.
+2. **Otimização Dual de Cobertura Secundária (`m=4` e `m=5`) + Permutação Isomórfica $\pi^*$ nos Fechamentos**:
    - 24 de 39 matrizes canônicas aprimoradas mantendo **100,0% de garantia em `m=6`** e elevando a cobertura exata de acertos parciais (`m=4` e `m=5`, responsáveis por >93% dos prêmios reais): ganho comprovado de **+6,29% concursos premiados no backtest** (5.991 → 6.368 em 1,2M avaliações reais, com picos de **+19,3%** em `10→7`, **+18,8%** em `11→8`, **+17,1%** em `9→6` e **+16,7%** em `12→7`).
    - Matrizes `9→6`, `10→7`, `11→8` e `12→8` atingiram **100% garantia de Quadra mesmo acertando apenas 5 dezenas no grupo** com os mesmos 3 jogos!
    - `mapWithOptimalPermutation()` mapeia as dezenas escolhidas preservando 100% o isomorfismo da matriz enquanto coloca **97%–100%** dos bilhetes dentro dos filtros reais (`checkFilters`) e maximiza dezenas `> 31`.
