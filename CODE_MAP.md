@@ -9,63 +9,19 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 
 ```text
 04 - Mega da Virada Potenza/
-├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.22)
+├── index.html                   # Interface SPA completa para GitHub Pages (V. 2.45)
 ├── styles.css                   # Estilos responsivos (Header Fixo, 4 Quadrantes, Heatmap, Alertas de Cotas)
-├── app.js                       # Controlador principal e eventos da interface (V. 2.22)
-├── stats_engine.js              # Motor matemático e sorteador com regra recomendada em JS
-├── printer_service.js           # Gerador óptico de volantes Caixa (83x185mm) em SVG (V. 2.22)
-├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage (V. 2.22)
+├── app.js                       # Controlador principal e eventos da interface (V. 2.45)
+├── stats_engine.js              # Motor matemático, Empirical Bayes + EWMA (#1115+) e Steiner 2-Opt (V. 2.45)
+├── printer_service.js           # Gerador óptico de volantes Caixa (Tradicional vs Virada) em SVG (V. 2.45)
+├── firebase_sync.js             # Sincronização em tempo real via Firebase e LocalStorage (V. 2.45)
 ├── data/
 │   ├── concursos.json           # Base histórica compactada dos 3.090 concursos (+ auto-sync Caixa)
 │   └── initial_state.json       # Estado inicial do Bolão Potenza e catálogo de nomes
 ├── CODE_MAP.md                  # Este mapa arquitetural
 ├── README.md                    # Documentação do repositório e link GitHub Pages
 ├── iniciar_sistema.bat          # Inicializador local para navegador Windows
-├── Backup_Versao_A/             # Backup imutável V. 1.20
-├── Backup_Versao_B/             # Backup imutável V. 1.21
-├── Backup_Versao_C/             # Backup imutável V. 2.03
-├── Backup_Versao_D/             # Backup imutável V. 2.04
-├── Backup_Versao_E/             # Backup imutável V. 2.05
-├── Backup_Versao_F/             # Backup imutável V. 2.06
-├── Backup_Versao_G/             # Backup imutável V. 2.07
-├── Backup_Versao_H/             # Backup imutável V. 2.08
-├── Backup_Versao_I/             # Backup imutável V. 2.09
-├── Backup_Versao_J/             # Backup imutável V. 2.10
-├── Backup_Versao_K/             # Backup imutável V. 2.11
-├── Backup_Versao_L/             # Backup imutável V. 2.12
-├── Backup_Versao_M/             # Backup imutável V. 2.13
-├── Backup_Versao_N/             # Backup imutável V. 2.14
-├── Backup_Versao_O/             # Backup imutável V. 2.15
-├── Backup_Versao_P/             # Backup imutável V. 2.16
-├── Backup_Versao_Q/             # Backup imutável V. 2.17
-├── Backup_Versao_R/             # Backup imutável V. 2.18
-├── Backup_Versao_S/             # Backup imutável V. 2.19
-├── Backup_Versao_T/             # Backup imutável V. 2.20
-├── Backup_Versao_U/             # Backup imutável V. 2.21
-├── Backup_Versao_V/             # Backup imutável V. 2.22
-├── Backup_Versao_W/             # Backup imutável V. 2.23
-├── Backup_Versao_X/             # Backup imutável V. 2.24
-├── Backup_Versao_Y/             # Backup imutável V. 2.25
-├── Backup_Versao_Z/             # Backup imutável V. 2.26
-├── Backup_Versao_AA/            # Backup imutável V. 2.27
-├── Backup_Versao_AB/            # Backup imutável V. 2.28
-├── Backup_Versao_AC/            # Backup imutável V. 2.29
-├── Backup_Versao_AD/            # Backup imutável V. 2.30
-├── Backup_Versao_AE/            # Backup imutável V. 2.31
-├── Backup_Versao_AF/            # Backup imutável V. 2.32
-├── Backup_Versao_AG/            # Backup imutável V. 2.33
-├── Backup_Versao_AH/            # Backup imutável V. 2.34
-├── Backup_Versao_AI/            # Backup imutável V. 2.35
-├── Backup_Versao_AJ/            # Backup imutável V. 2.36
-├── Backup_Versao_AK/            # Backup imutável V. 2.37
-├── Backup_Versao_AL/            # Backup imutável V. 2.38
-├── Backup_Versao_AM/            # Backup imutável V. 2.39
-├── Backup_Versao_AN/            # Backup imutável V. 2.40
-├── Backup_Versao_AO/            # Backup imutável V. 2.41
-├── Backup_Versao_AP/            # Backup imutável V. 2.42
-├── Backup_Versao_AQ/            # Backup imutável V. 2.43
-├── Backup_Versao_AR/            # Backup imutável V. 2.44
-├── Backup_Versao_AS/            # Backup imutável V. 2.45
+├── Backup_Versao_A/             # Backup imutável V. 2.45 (Versão Oficial Base — reinício do histórico de backups)
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
