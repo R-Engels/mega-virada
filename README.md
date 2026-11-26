@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.35 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.36 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -33,9 +33,12 @@ Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via
 
 ---
 
-## 🎯 Principais Recursos (V. 2.35)
+## 🎯 Principais Recursos (V. 2.36)
 
-1. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:
+1. **Montador por Orçamento (60/60 Dezenas) & Fechamento Estritamente Manual**:
+   - Montagem automática por orçamento cobrindo todas as 60 dezenas via Steiner Packing (`⚖️ Misto Inteligente 7+6 dez.`, `🎯 Steiner 6 dez.` e `🔥 Steiner 7 dez.`).
+   - Fechamento matemático (6, 7 ou 8 dezenas × Quadra/Quina/Sena) mantido em seção manual opcional (`✋ Fechamento Manual`), sem atalhos enganosos de "quentes/balanceadas" e liberando `⚡ Gerar Fechamento` somente após seleção manual de `k + 1` dezenas.
+2. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:
    - Simulador histórico instantâneo de todas as apostas contra todos os concursos passados da Mega-Sena (incluindo prêmios múltiplos oficiais Caixa para jogos de 7 e 8 dezenas).
    - Gerador de fechamentos matemáticos para 7 a 20 dezenas em jogos de **6, 7 ou 8 números** com garantia verificada de Quadra ou Quina, cálculo de economia e envio direto para o bolão.
 2. **Impressão Óptica A4 Reestruturada (Scanner Caixa 83×185mm)**:

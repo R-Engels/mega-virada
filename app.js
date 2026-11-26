@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.35 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.36 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1526,10 +1526,9 @@ function bindEvents() {
   $('#btn-clear-conf')?.addEventListener('click', limparConferenciaVisual);
   $('#btn-backtesting-bolao')?.addEventListener('click', runBolaoBacktesting);
 
-  // Fechamentos Matemáticos (6, 7 ou 8 dezenas)
+  // Montador por Orçamento & Fechamento Manual (6, 7 ou 8 dezenas)
   renderFechamentoPicker();
-  $('#btn-fech-sugerir-12')?.addEventListener('click', () => sugerirFechamento(12, 'quentes'));
-  $('#btn-fech-sugerir-15')?.addEventListener('click', () => sugerirFechamento(15, 'balanceadas'));
+  $('#fech-bet-size')?.addEventListener('change', updateFechamentoGerarState);
   $('#btn-fech-limpar')?.addEventListener('click', () => {
     state.fechamentoSelected.clear();
     state.fechamentoResult = null;
@@ -1538,7 +1537,6 @@ function bindEvents() {
     if (box) box.style.display = 'none';
   });
   $('#btn-fech-budget')?.addEventListener('click', gerarPorOrcamentoUi);
-  $('#btn-fech-auto')?.addEventListener('click', gerarMelhorFechamentoAuto);
   $('#btn-fech-gerar')?.addEventListener('click', gerarFechamentoUi);
   $('#btn-fech-add-bolao')?.addEventListener('click', adicionarFechamentoAoBolao);
   $('#btn-fech-backtest')?.addEventListener('click', testarFechamentoBacktesting);
@@ -1743,42 +1741,31 @@ function renderFechamentoPicker() {
       renderFechamentoPicker();
     });
   });
+
+  updateFechamentoGerarState();
 }
 
-function sugerirFechamento(qtd, mode) {
-  state.fechamentoSelected.clear();
-  const scored = StatsEngine.scoreNumbers(state.concursos || [], 100);
-  if (mode === 'quentes') {
-    scored
-      .slice()
-      .sort((a, b) => b.freq_total - a.freq_total)
-      .slice(0, qtd)
-      .forEach((x) => state.fechamentoSelected.add(x.dezena));
-  } else {
-    // Balanceada: distribui proporcionalmente nos 4 quadrantes pelos maiores scores
-    const byQ = { 1: [], 2: [], 3: [], 4: [] };
-    scored
-      .slice()
-      .sort((a, b) => b.score - a.score)
-      .forEach((x) => byQ[StatsEngine.getQuadrant(x.dezena)].push(x.dezena));
-    let idx = 0;
-    while (state.fechamentoSelected.size < qtd) {
-      const q = (idx % 4) + 1;
-      const next = byQ[q].shift();
-      if (next) state.fechamentoSelected.add(next);
-      idx++;
-      if (idx > 80) break;
-    }
-  }
-  renderFechamentoPicker();
-  toast(`${state.fechamentoSelected.size} dezenas sugeridas (${mode === 'quentes' ? 'mais sorteadas' : 'balanceadas'}).`);
+function updateFechamentoGerarState() {
+  const btn = $('#btn-fech-gerar');
+  if (!btn) return;
+  const k = parseInt($('#fech-bet-size')?.value, 10) || 6;
+  const minNeeded = k + 1;
+  const sel = state.fechamentoSelected.size;
+  const ready = sel >= minNeeded;
+  btn.disabled = !ready;
+  btn.textContent = ready
+    ? `⚡ Gerar Fechamento (${sel} dez.)`
+    : `⚡ Gerar Fechamento (marque ≥${minNeeded} dez.)`;
+  btn.title = ready
+    ? `Gerar fechamento manual com as ${sel} dezenas selecionadas`
+    : `Selecione manualmente ao menos ${minNeeded} dezenas no volante abaixo para liberar`;
 }
 
 function garantiaLabel(g) {
   return g === 6 ? 'Sena' : g === 5 ? 'Quina' : 'Quadra';
 }
 
-function renderFechamentoOutput(res, comparativo = null) {
+function renderFechamentoOutput(res) {
   state.fechamentoResult = res;
 
   const box = $('#fech-results-box');
@@ -1788,55 +1775,9 @@ function renderFechamentoOutput(res, comparativo = null) {
   const cmpBox = $('#fech-auto-compare');
   if (btBox) btBox.style.display = 'none';
   if (box) box.style.display = 'block';
-
   if (cmpBox) {
-    if (comparativo && comparativo.length) {
-      cmpBox.style.display = 'block';
-      const rows = comparativo
-        .map((c) => {
-          const isBest = c.k === res.k && c.garantia === res.garantia;
-          return `
-            <tr style="${isBest ? 'background:rgba(16,185,129,0.14);font-weight:700' : ''}">
-              <td>${isBest ? '⭐ ' : ''}${c.k} dez./jogo · <b>${garantiaLabel(c.garantia)} (${c.garantia})</b></td>
-              <td style="text-align:center">${c.total_jogos} jogos</td>
-              <td style="text-align:right">R$ ${c.custo_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</td>
-              <td style="text-align:center">${c.economia_pct}%</td>
-              <td style="text-align:center">${c.cobertura_pct}%</td>
-              <td style="text-align:center">
-                <button class="btn btn-sm ${isBest ? 'btn-primary' : 'btn-ghost'}" onclick="selecionarOpcaoFechamento(${c.k}, ${c.garantia})">
-                  ${isBest ? 'Ativo' : 'Usar'}
-                </button>
-              </td>
-            </tr>
-          `;
-        })
-        .join('');
-      cmpBox.innerHTML = `
-        <div class="backtesting-panel" style="margin-top:0">
-          <div class="bt-header">
-            <strong>🤖 Melhor Garantido Calculado Automaticamente (${res.v} dezenas → ${res.total_jogos} jogos de ${res.k} dez. · ${garantiaLabel(res.garantia)} ${res.cobertura_pct}%)</strong>
-          </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Estratégia</th>
-                  <th style="text-align:center">Jogos</th>
-                  <th style="text-align:right">Custo</th>
-                  <th style="text-align:center">Economia</th>
-                  <th style="text-align:center">Garantia</th>
-                  <th style="text-align:center">Ação</th>
-                </tr>
-              </thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    } else {
-      cmpBox.style.display = 'none';
-      cmpBox.innerHTML = '';
-    }
+    cmpBox.style.display = 'none';
+    cmpBox.innerHTML = '';
   }
 
   if (kpis) {
@@ -1879,25 +1820,19 @@ function renderFechamentoOutput(res, comparativo = null) {
   }
 }
 
-window.selecionarOpcaoFechamento = function (k, garantia) {
-  const kEl = $('#fech-bet-size');
-  const gEl = $('#fech-garantia');
-  if (kEl) kEl.value = String(k);
-  if (gEl) gEl.value = String(garantia);
-  gerarFechamentoUi();
-};
-
 function gerarPorOrcamentoUi() {
   const budget = parseFloat($('#fech-budget-val')?.value) || 650;
   const perfil = $('#fech-budget-profile')?.value || 'misto';
   const lastDraw = state.concursos && state.concursos.length ? state.concursos[state.concursos.length - 1] : null;
   try {
-    const res = StatsEngine.generateByBudget(budget, perfil, lastDraw, state.concursos || []);
-    // Compatível com botão Adicionar ao Bolão e Backtesting!
+    const res = StatsEngine.generateByBudget(budget, perfil, lastDraw);
+    // Compatível com botão Adicionar ao Bolão e Backtesting
     state.fechamentoResult = {
+      origem_orcamento: true,
+      perfil,
       v: res.dezenas_cobertas,
       k: res.jogos[0]?.length || 6,
-      garantia: perfil === 'fechamento' ? 5 : 4,
+      garantia: 4,
       jogos: res.jogos,
       total_jogos: res.total_jogos,
       custo_total: res.custo_total,
@@ -1958,57 +1893,19 @@ function gerarPorOrcamentoUi() {
   }
 }
 
-function autoCompletarDezenasFechamento(alvoQtd = 12) {
-  const scored = StatsEngine.scoreNumbers(state.concursos || [], 100);
-  const byQ = { 1: [], 2: [], 3: [], 4: [] };
-  scored
-    .slice()
-    .sort((a, b) => b.score - a.score)
-    .forEach((x) => {
-      if (!state.fechamentoSelected.has(x.dezena)) {
-        byQ[StatsEngine.getQuadrant(x.dezena)].push(x.dezena);
-      }
-    });
-  let idx = 0;
-  while (state.fechamentoSelected.size < alvoQtd && idx < 120) {
-    const q = (idx % 4) + 1;
-    const next = byQ[q].shift();
-    if (next) state.fechamentoSelected.add(next);
-    idx++;
-  }
-  renderFechamentoPicker();
-}
-
-function gerarMelhorFechamentoAuto() {
-  if (state.fechamentoSelected.size < 7) {
-    autoCompletarDezenasFechamento(12);
-  }
-  const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
-  try {
-    const { best, comparativo } = StatsEngine.generateBestFechamento(nums, 6.0);
-    const kEl = $('#fech-bet-size');
-    const gEl = $('#fech-garantia');
-    if (kEl) kEl.value = String(best.k);
-    if (gEl) gEl.value = String(best.garantia);
-    renderFechamentoOutput(best, comparativo);
-    toast(`Melhor garantido (${nums.length} dez.): ${best.total_jogos} jogos de ${best.k} dez. (${garantiaLabel(best.garantia)} ${best.cobertura_pct}%).`);
-  } catch (err) {
-    toast(err.message || 'Erro no cálculo automático.', true);
-  }
-}
-
 function gerarFechamentoUi() {
   const k = parseInt($('#fech-bet-size')?.value, 10) || 6;
   const garantia = parseInt($('#fech-garantia')?.value, 10) || 4;
   if (state.fechamentoSelected.size <= k) {
-    autoCompletarDezenasFechamento(Math.max(12, k + 4));
+    toast(`Selecione manualmente pelo menos ${k + 1} dezenas no volante.`, true);
+    return;
   }
   const nums = Array.from(state.fechamentoSelected).sort((a, b) => a - b);
 
   try {
     const res = StatsEngine.generateFechamento(nums, k, garantia, 6.0);
-    renderFechamentoOutput(res, null);
-    toast(`Fechamento gerado: ${res.total_jogos} jogos de ${res.k} dezenas (${garantiaLabel(res.garantia)} ${res.cobertura_pct}%).`);
+    renderFechamentoOutput(res);
+    toast(`Fechamento manual gerado: ${res.total_jogos} jogos de ${res.k} dezenas (${garantiaLabel(res.garantia)} ${res.cobertura_pct}%).`);
   } catch (err) {
     toast(err.message || 'Erro ao gerar fechamento.', true);
   }
@@ -2016,30 +1913,33 @@ function gerarFechamentoUi() {
 
 function testarFechamentoBacktesting() {
   if (!state.fechamentoResult || !state.fechamentoResult.jogos.length) {
-    toast('Gere um fechamento primeiro.', true);
+    toast('Gere os jogos primeiro.', true);
     return;
   }
   const res = state.fechamentoResult;
   const bt = StatsEngine.runBacktesting(res.jogos, state.concursos || []);
-  renderBacktestingResult(
-    $('#fech-backtesting-box'),
-    bt,
-    `Backtesting do Fechamento (${res.v}→${res.k} dez., garantia ${garantiaLabel(res.garantia)})`
-  );
+  const titulo = res.origem_orcamento && res.descricao
+    ? `Backtesting — ${res.descricao}`
+    : `Backtesting do Fechamento (${res.v}→${res.k} dez., garantia ${garantiaLabel(res.garantia)})`;
+  renderBacktestingResult($('#fech-backtesting-box'), bt, titulo);
 }
 
 function adicionarFechamentoAoBolao() {
   const b = getCurrentBolao();
   const res = state.fechamentoResult;
   if (!b || !res || !res.jogos.length) {
-    toast('Gere um fechamento primeiro.', true);
+    toast('Gere os jogos primeiro.', true);
     return;
   }
 
   const nomeSelecionado = getSelectedParticipantName();
-  const partNome = (nomeSelecionado || `FECHAMENTO ${res.v}→${res.k}`).toUpperCase();
+  const defaultNome = res.origem_orcamento ? 'CARTEIRA ORÇAMENTO' : `FECHAMENTO ${res.v}→${res.k}`;
+  const partNome = (nomeSelecionado || defaultNome).toUpperCase();
+  const resumoConfirm = res.origem_orcamento && res.descricao
+    ? `${res.total_jogos} jogo(s) (${res.descricao})`
+    : `${res.total_jogos} jogo(s) de ${res.k} dezenas`;
 
-  if (!confirm(`Adicionar ${res.total_jogos} jogo(s) de ${res.k} dezenas ao bolão "${b.nome}" para "${partNome}"?`)) {
+  if (!confirm(`Adicionar ${resumoConfirm} ao bolão "${b.nome}" para "${partNome}"?`)) {
     return;
   }
 
@@ -2074,7 +1974,7 @@ function adicionarFechamentoAoBolao() {
       participante_id: p.id,
       participante_nome: p.nome,
       dezenas: [...dez],
-      origem: `fechamento_${res.v}_${res.k}_g${res.garantia}`,
+      origem: res.origem_orcamento ? `orcamento_${res.perfil || 'misto'}` : `fechamento_${res.v}_${res.k}_g${res.garantia}`,
     });
     adicionados++;
   });
@@ -2094,9 +1994,9 @@ function adicionarFechamentoAoBolao() {
 
     persistAndBroadcast();
     renderAll();
-    toast(`${adicionados} jogo(s) de ${res.k} dezenas adicionados para ${p.nome} (${p.cotas} cota${p.cotas > 1 ? 's' : ''})!`);
+    toast(`${adicionados} jogo(s) adicionados para ${p.nome} (${p.cotas} cota${p.cotas > 1 ? 's' : ''})!`);
   } else {
-    toast('Todos os jogos deste fechamento já existem no bolão.');
+    toast('Todos os jogos gerados já existem no bolão.');
   }
 }
 

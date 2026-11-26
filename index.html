@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.35</title>
-  <link rel="stylesheet" href="styles.css?v=2.35" />
+  <title>Mega-Sena Potenza — V. 2.36</title>
+  <link rel="stylesheet" href="styles.css?v=2.36" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
   <header class="topbar no-print">
     <div class="brand">
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.35</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.36</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -212,14 +212,13 @@
       </div>
     </section>
 
-    <!-- 3.5. FECHAMENTOS MATEMÁTICOS (6, 7 OU 8 DEZENAS) -->
+    <!-- 3.5. MONTADOR POR ORÇAMENTO & FECHAMENTO MANUAL -->
     <section id="sec-fechamento" class="card">
       <div class="card-header">
-        <h3>Fechamentos Matemáticos (Jogos de 6, 7 ou 8 Dezenas)</h3>
-        <span id="fech-sel-count" class="badge">Selecionadas: 0 / 20</span>
+        <h3>Montar por Orçamento &amp; Fechamento Manual</h3>
       </div>
 
-      <!-- Otimizador por Orçamento (R$) — Steiner Packing + Matrizes Recordes -->
+      <!-- Otimizador por Orçamento (R$) — Cobertura 60/60 (Steiner Packing) -->
       <div class="fech-controls-bar" style="margin-bottom:10px">
         <label class="fech-ctrl-item">
           <span>Orçamento do Bolão (R$)</span>
@@ -228,44 +227,48 @@
         <label class="fech-ctrl-item">
           <span>Estratégia pelo Orçamento</span>
           <select id="fech-budget-profile">
-            <option value="misto">⚖️ Misto Inteligente (7 dez. + 6 dez.)</option>
+            <option value="misto">⚖️ Misto Inteligente (7 dez. + 6 dez.) — Recomendado</option>
             <option value="freq6">🎯 Máx. Frequência (Steiner 6 dez.)</option>
             <option value="eq7">🔥 Equilibrado (Steiner 7 dez. — 3× Quadra)</option>
-            <option value="fechamento">💎 Melhor Fechamento Recorde no Orçamento</option>
           </select>
         </label>
         <div class="fech-quick-btns">
-          <button id="btn-fech-budget" class="btn btn-primary" title="Monta automaticamente a melhor carteira matemática dentro do orçamento informado">💰 Montar por Orçamento</button>
+          <button id="btn-fech-budget" class="btn btn-primary" title="Monta automaticamente a carteira matemática cobrindo as 60 dezenas dentro do orçamento informado">💰 Montar por Orçamento</button>
         </div>
       </div>
 
-      <div class="fech-controls-bar">
-        <label class="fech-ctrl-item">
-          <span>Dezenas por Jogo</span>
-          <select id="fech-bet-size">
-            <option value="6">6 dezenas (R$ 6,00)</option>
-            <option value="7">7 dezenas (R$ 42,00)</option>
-            <option value="8">8 dezenas (R$ 168,00)</option>
-          </select>
-        </label>
-        <label class="fech-ctrl-item">
-          <span>Garantia (acertando 6 no grupo)</span>
-          <select id="fech-garantia">
-            <option value="4">Quadra (4 acertos)</option>
-            <option value="5">Quina (5 acertos)</option>
-            <option value="6">Sena (6 acertos)</option>
-          </select>
-        </label>
-        <div class="fech-quick-btns">
-          <button id="btn-fech-sugerir-12" class="btn btn-sm btn-ghost" title="Selecionar 12 dezenas mais frequentes">🔥 12 Quentes</button>
-          <button id="btn-fech-sugerir-15" class="btn btn-sm btn-ghost" title="Selecionar 15 dezenas balanceadas por quadrante">⚖️ 15 Balanceadas</button>
-          <button id="btn-fech-limpar" class="btn btn-sm btn-ghost">Limpar</button>
-          <button id="btn-fech-auto" class="btn btn-ghost btn-info-outline" title="Calcula sozinho todas as opções (6/7/8 dez. × Sena/Quina/Quadra) e escolhe o melhor garantido">🤖 Melhor Garantido</button>
-          <button id="btn-fech-gerar" class="btn btn-primary">⚡ Gerar Fechamento</button>
-        </div>
-      </div>
+      <!-- Fechamento Manual (somente se o usuário quiser escolher dezenas na mão) -->
+      <details id="fech-manual-details" class="rules-box" style="margin-top:10px">
+        <summary style="font-size:13px;font-weight:700">
+          ✋ Fechamento Manual (Escolher dezenas na mão)
+          <span id="fech-sel-count" class="badge" style="margin-left:8px">Selecionadas: 0 / 20</span>
+        </summary>
 
-      <div id="fech-volante-picker" style="margin-top:10px"></div>
+        <div class="fech-controls-bar" style="margin-top:10px">
+          <label class="fech-ctrl-item">
+            <span>Dezenas por Jogo</span>
+            <select id="fech-bet-size">
+              <option value="6">6 dezenas (R$ 6,00)</option>
+              <option value="7">7 dezenas (R$ 42,00)</option>
+              <option value="8">8 dezenas (R$ 168,00)</option>
+            </select>
+          </label>
+          <label class="fech-ctrl-item">
+            <span>Garantia (acertando 6 no grupo)</span>
+            <select id="fech-garantia">
+              <option value="4">Quadra (4 acertos)</option>
+              <option value="5">Quina (5 acertos)</option>
+              <option value="6">Sena (6 acertos)</option>
+            </select>
+          </label>
+          <div class="fech-quick-btns">
+            <button id="btn-fech-limpar" class="btn btn-sm btn-ghost">Limpar</button>
+            <button id="btn-fech-gerar" class="btn btn-primary" disabled title="Selecione manualmente ao menos 7 dezenas no volante abaixo para liberar">⚡ Gerar Fechamento (marque ≥7 dez.)</button>
+          </div>
+        </div>
+
+        <div id="fech-volante-picker" style="margin-top:10px"></div>
+      </details>
 
       <div id="fech-results-box" class="fech-results-box" style="display:none">
         <div id="fech-auto-compare" style="display:none;margin-top:12px"></div>
@@ -377,10 +380,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.35 -->
-  <script src="stats_engine.js?v=2.35"></script>
-  <script src="printer_service.js?v=2.35"></script>
-  <script src="firebase_sync.js?v=2.35"></script>
-  <script src="app.js?v=2.35"></script>
+  <!-- Módulos da Aplicação V. 2.36 -->
+  <script src="stats_engine.js?v=2.36"></script>
+  <script src="printer_service.js?v=2.36"></script>
+  <script src="firebase_sync.js?v=2.36"></script>
+  <script src="app.js?v=2.36"></script>
 </body>
 </html>

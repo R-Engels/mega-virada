@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.35 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.36 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -1221,100 +1221,16 @@ const StatsEngine = (() => {
     };
   }
 
-  // Modo Automático: avalia combinações de 6/7/8 dezenas × Sena/Quina/Quadra e escolhe o melhor fechamento garantido
-  function generateBestFechamento(selectedNums, basePrice6 = 6.0) {
-    const nums = Array.from(
-      new Set((selectedNums || []).map((n) => parseInt(n, 10)).filter((n) => n >= 1 && n <= 60))
-    ).sort((a, b) => a - b);
-
-    const v = nums.length;
-    if (v < 7) {
-      throw new Error('Selecione pelo menos 7 dezenas para o cálculo automático do melhor fechamento.');
-    }
-    if (v > 20) {
-      throw new Error('Selecione no máximo 20 dezenas.');
-    }
-
-    const ks = [6, 7, 8].filter((k) => k < v);
-    const garantias = [6, 5, 4];
-    const avaliados = [];
-
-    for (const g of garantias) {
-      // Evita cálculos explosivos para Sena com muitas dezenas no modo automático
-      if (g === 6 && v > 11) continue;
-      if (g === 5 && v > 16) continue;
-      for (const k of ks) {
-        if (g === 6 && k === 6 && combInt(v, 6) > 84) continue;
-        try {
-          const res = generateFechamento(nums, k, g, basePrice6);
-          if (res.cobertura_pct >= 99.5) {
-            avaliados.push(res);
-          }
-        } catch (e) {}
-      }
-    }
-
-    if (!avaliados.length) {
-      const fallback = generateFechamento(nums, 6, 4, basePrice6);
-      return { best: fallback, comparativo: [fallback] };
-    }
-
-    // Critério de seleção do melhor garantido:
-    // 1. Filtra opções viáveis (<= 50 jogos e que economizam ou igualam a múltipla direta)
-    // 2. Entre as viáveis, prioriza MAIOR garantia (Sena > Quina > Quadra), e na mesma garantia o MENOR custo total
-    const viaveis = avaliados.filter(
-      (r) => r.total_jogos <= 50 && r.custo_total <= r.custo_multipla_direta
-    );
-    const pool = viaveis.length ? viaveis : avaliados;
-
-    pool.sort((a, b) => {
-      if (b.garantia !== a.garantia) return b.garantia - a.garantia;
-      if (a.custo_total !== b.custo_total) return a.custo_total - b.custo_total;
-      return a.total_jogos - b.total_jogos;
-    });
-
-    const best = pool[0];
-    // Ordena comparativo para exibição (maior garantia -> menor custo)
-    const comparativo = avaliados
-      .slice()
-      .sort((a, b) => (b.garantia !== a.garantia ? b.garantia - a.garantia : a.custo_total - b.custo_total))
-      .slice(0, 6);
-
-    return { best, comparativo };
-  }
-
-  // Otimizador por Orçamento (R$): monta a melhor carteira matemática (Steiner Packing + Fechamentos Recordes)
-  function generateByBudget(orcamentoReais, perfil = 'misto', lastDraw = null, concursos = []) {
+  // Otimizador por Orçamento (R$): monta a melhor carteira matemática cobrindo 60/60 dezenas (Steiner Packing)
+  function generateByBudget(orcamentoReais, perfil = 'misto', lastDraw = null) {
     const budget = Math.max(36, Math.min(20000, Number(orcamentoReais) || 650));
-    const scored = scoreNumbers(concursos || [], 100);
-    const pickBalanced = (qtd) => {
-      const byQ = { 1: [], 2: [], 3: [], 4: [] };
-      scored.slice().sort((a, b) => b.score - a.score).forEach((x) => byQ[getQuadrant(x.dezena)].push(x.dezena));
-      const out = [];
-      for (let i = 0; out.length < qtd && i < 120; i++) {
-        const n = byQ[(i % 4) + 1].shift();
-        if (n) out.push(n);
-      }
-      return out.sort((a, b) => a - b);
-    };
 
     let jogos = [];
     let descricao = '';
     let custoTotal = 0;
     let combinacoesEq6 = 0;
 
-    if (perfil === 'misto') {
-      // ~60% em jogos de 7 dez (multiplicador 3x Quadra / 2x Quina) + ~40% em jogos de 6 dez (alta cobertura 60 dez)
-      const qtd7 = Math.floor((budget * 0.6) / 42);
-      const rem = budget - qtd7 * 42;
-      const qtd6 = Math.floor(rem / 6);
-      const g7 = qtd7 > 0 ? generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
-      const g6 = qtd6 > 0 ? generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
-      jogos = [...g7, ...g6];
-      custoTotal = g7.length * 42 + g6.length * 6;
-      combinacoesEq6 = g7.length * 7 + g6.length;
-      descricao = `Misto Inteligente: ${g7.length} jogo(s) de 7 dez. + ${g6.length} jogo(s) de 6 dez.`;
-    } else if (perfil === 'freq6') {
+    if (perfil === 'freq6') {
       const qtd6 = Math.floor(budget / 6);
       jogos = generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, last_draw: lastDraw }).jogos.map((j) => j.dezenas);
       custoTotal = jogos.length * 6;
@@ -1330,29 +1246,16 @@ const StatsEngine = (() => {
       combinacoesEq6 = g7.length * 7 + g6.length;
       descricao = `Equilibrado 7 dez. (Steiner): ${g7.length} jogos de 7 dez.${g6.length ? ' + ' + g6.length + ' de 6 dez.' : ''}`;
     } else {
-      // Fechamento Recorde no Orçamento: escolhe a matriz recorde com MAIOR cobertura dentro do orçamento!
-      let bestFech = null;
-      const keys = Object.keys(OPTIMAL_COVERING_MATRICES);
-      for (let i = 0; i < keys.length; i++) {
-        const [v, k, g] = keys[i].split('_').map(Number);
-        const count = OPTIMAL_COVERING_MATRICES[keys[i]].length;
-        const cost = count * getBetPrice(k, 6);
-        if (cost <= budget) {
-          // Score: prioriza maior orçamento aproveitado + maior garantia + maior grupo v
-          const score = g * 1000 + cost * 2 + v * 25;
-          if (!bestFech || score > bestFech.score) {
-            bestFech = { v, k, g, cost, score };
-          }
-        }
-      }
-      if (!bestFech) bestFech = { v: 12, k: 6, g: 4 };
-      const sel = pickBalanced(bestFech.v);
-      const fRes = generateFechamento(sel, bestFech.k, bestFech.g, 6.0);
-      jogos = fRes.jogos;
-      custoTotal = fRes.custo_total;
-      combinacoesEq6 = jogos.reduce((acc, j) => acc + combInt(j.length, 6), 0);
-      const gName = bestFech.g === 6 ? 'Sena' : bestFech.g === 5 ? 'Quina' : 'Quadra';
-      descricao = `Fechamento Recorde ${bestFech.v}→${bestFech.k} dez. (${gName} 100%): ${fRes.total_jogos} jogos`;
+      // Misto Inteligente (padrão): ~60% em jogos de 7 dez (3x Quadra / 2x Quina) + ~40% em jogos de 6 dez (cobertura 60/60)
+      const qtd7 = Math.floor((budget * 0.6) / 42);
+      const rem = budget - qtd7 * 42;
+      const qtd6 = Math.floor(rem / 6);
+      const g7 = qtd7 > 0 ? generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      const g6 = qtd6 > 0 ? generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      jogos = [...g7, ...g6];
+      custoTotal = g7.length * 42 + g6.length * 6;
+      combinacoesEq6 = g7.length * 7 + g6.length;
+      descricao = `Misto Inteligente: ${g7.length} jogo(s) de 7 dez. + ${g6.length} jogo(s) de 6 dez.`;
     }
 
     // Métricas matemáticas exatas do portfólio gerado
@@ -1401,7 +1304,6 @@ const StatsEngine = (() => {
     getExcelHeatmapColor,
     runBacktesting,
     generateFechamento,
-    generateBestFechamento,
     generateByBudget,
   };
 })();

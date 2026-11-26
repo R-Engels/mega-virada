@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.35 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.36 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -56,12 +56,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AG/            # Backup imutável V. 2.33
 ├── Backup_Versao_AH/            # Backup imutável V. 2.34
 ├── Backup_Versao_AI/            # Backup imutável V. 2.35
+├── Backup_Versao_AJ/            # Backup imutável V. 2.36
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.35)
+## Fluxos de Operação (V. 2.36)
 
-1. **Novos Recordes de Fechamento (-18 Jogos Extras / -R\$ 882), Steiner-Packing SA e Otimizador por Orçamento (R\$)**:
+1. **Remoção de Sugestões Automáticas (12 Quentes, 15 Balanceadas, Melhor Garantido) e Fechamento Estritamente Manual**:
+   - Removidos da UI e do motor os botões/opções de corte automático de subconjunto (`🔥 12 Quentes`, `⚖️ 15 Balanceadas`, `🤖 Melhor Garantido`, auto-preenchimento e opção `fechamento` no seletor por orçamento), evitando concentração artificial em 12–15 dezenas sem vantagem preditiva.
+   - `💰 Montar por Orçamento` mantido como fluxo principal em `#sec-fechamento` cobrindo 60/60 dezenas (`⚖️ Misto Inteligente 7+6 dez.`, `🎯 Máx. Frequência Steiner 6 dez.` e `🔥 Equilibrado Steiner 7 dez.`).
+   - Fechamento Manual recolhido em `<details id="fech-manual-details">` (opcional para escolha manual no volante); botão `⚡ Gerar Fechamento` permanece desabilitado (`disabled`) via `updateFechamentoGerarState()` até o operador selecionar manualmente ao menos `k + 1` dezenas (`≥7` p/ 6 dez., `≥8` p/ 7 dez., `≥9` p/ 8 dez.).
+   - Corrigidos título de backtesting e confirmação de inclusão no bolão para carteiras mistas geradas por orçamento.
+2. **Novos Recordes de Fechamento (-18 Jogos Extras / -R\$ 882), Steiner-Packing SA e Otimizador por Orçamento (R\$)**:
    - Ataque Tabu+SA indexado (Track B) quebrou 11 novos recordes mantendo **100,000% garantia `m=6`** + polimento `m=4`/`m=5`: `15→7 Quadra: 12→9 jogos (-35,7% vs V2.31)`, `16→8 Quadra: 8→6 jogos (-R\$ 336)`, `13→7 Quina: 27→24 (-R\$ 126)`, `13→8 Quina: 13→12 (-R\$ 168)`, `12→7 Quina: 17→16 (R\$ 672)`, `15→6 Quadra: 21→19`, `14→6 Quadra: 16→14`, `13→6 Quadra: 11→10`, `12→6 Quina: 40→39`, `16→6 Quadra: 30→29`.
    - `generatePotenzaGames()` promovido para **Steiner-Packing SA direcionado a conflitos** (`99,9%` pares únicos em 84 jogos, `98,3%` em 100 jogos, `95,4%` em 112 jogos, `Ov3+ = 0`).
    - Adicionado `StatsEngine.generateByBudget(orcamento, perfil)` + barra **Montar por Orçamento (R\$)** em `#sec-fechamento` (Misto 7+6 dez, Steiner 6 dez, Steiner 7 dez e Melhor Fechamento Recorde no Orçamento), exibindo chance real (Sena/Quadra), pares únicos e backtesting imediato.
@@ -201,6 +207,9 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 - `getOverview(concursos: Array, windowRecent?: number) -> Object`: Visão geral com quentes, frias e top pares.
 - `checkFilters(cand: number[], lastDraw?: Object, rules?: Object) -> boolean`: Validação de soma, paridade e quadrantes.
 - `generatePotenzaGames(params: Object) -> Object`: Gerador oficial com Regra Recomendada (cobertura de zeradas, pares inéditos, balanceamento e bloqueio de duplicadas).
+- `generateFechamento(selectedNums: number[], k?: number, garantia?: number, basePrice6?: number) -> Object`: Fechamento matemático manual (matrizes recordes + Multi-Start Greedy) para dezenas escolhidas manualmente.
+- `generateByBudget(orcamentoReais: number, perfil?: string, lastDraw?: Object) -> Object`: Montador por orçamento cobrindo 60/60 dezenas (`misto`, `freq6`, `eq7`).
+- `runBacktesting(apostas: Array, concursos: Array) -> Object`: Backtesting histórico via bitmasks 32-bit com multiplicadores Caixa.
 - `conferirApostas(apostas: Array, dezenasSorteadas: number[]) -> Object`: Apuração de acertos.
 - `getExcelHeatmapColor(value: number, min: number, max: number) -> string`: Gradiente de 3 cores estilo Excel (Verde -> Amarelo -> Vermelho).
 
@@ -229,3 +238,6 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 - `sortearCotaInteira()`: Sorteia todos os jogos da cota direto pro bolão.
 - `salvarApostaManual()`: Valida e grava aposta montada no cartão (seja manual ou completada).
 - `togglePagamento(partId: number)`: Alterna status PAGO / PENDENTE instantaneamente.
+- `updateFechamentoGerarState()`: Habilita `⚡ Gerar Fechamento` somente quando há `>= k + 1` dezenas selecionadas manualmente.
+- `gerarPorOrcamentoUi()`: Monta carteira 60/60 por orçamento (`misto`, `freq6`, `eq7`).
+- `gerarFechamentoUi()`: Gera fechamento exclusivamente a partir das dezenas selecionadas manualmente pelo usuário.
