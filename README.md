@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.36 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.37 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -33,9 +33,12 @@ Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via
 
 ---
 
-## 🎯 Principais Recursos (V. 2.36)
+## 🎯 Principais Recursos (V. 2.37)
 
-1. **Montador por Orçamento (60/60 Dezenas) & Fechamento Estritamente Manual**:
+1. **Semáforo EV+ "Melhor Momento de Jogar", Steiner Packing Aprimorado e Peso Globo Moderno (`#1115+`)**:
+   - Avalia automaticamente o próximo concurso (acumulada, Final 0/5 com bônus +22%, Mega da Virada), calcula o Retorno Esperado (`EV%`) com divisão Poisson (Datas `≤31` vs Anti-Divisão Potenza) e indica quando aguardar ou entrar forte com simulador de prêmios.
+   - Steiner-Packing SA aprimorado para maior taxa de pares únicos com sobreposição 3+ zerada + peso Bayesiano opcional da Era Moderna (`#1115+`) preservando cobertura 60/60 dezenas.
+2. **Montador por Orçamento (60/60 Dezenas) & Fechamento Estritamente Manual**:
    - Montagem automática por orçamento cobrindo todas as 60 dezenas via Steiner Packing (`⚖️ Misto Inteligente 7+6 dez.`, `🎯 Steiner 6 dez.` e `🔥 Steiner 7 dez.`).
    - Fechamento matemático (6, 7 ou 8 dezenas × Quadra/Quina/Sena) mantido em seção manual opcional (`✋ Fechamento Manual`), sem atalhos enganosos de "quentes/balanceadas" e liberando `⚡ Gerar Fechamento` somente após seleção manual de `k + 1` dezenas.
 2. **Backtesting Histórico (3.087 Concursos) e Fechamentos Matemáticos (6, 7 ou 8 Dezenas)**:

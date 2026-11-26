@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.36 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.37 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -57,12 +57,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AH/            # Backup imutável V. 2.34
 ├── Backup_Versao_AI/            # Backup imutável V. 2.35
 ├── Backup_Versao_AJ/            # Backup imutável V. 2.36
+├── Backup_Versao_AK/            # Backup imutável V. 2.37
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.36)
+## Fluxos de Operação (V. 2.37)
 
-1. **Remoção de Sugestões Automáticas (12 Quentes, 15 Balanceadas, Melhor Garantido) e Fechamento Estritamente Manual**:
+1. **Semáforo "Melhor Momento de Jogar" (EV+ Acumuladas), Steiner Packing Aprimorado e Peso Opcional Era Moderna (`#1115+`)**:
+   - Adicionado `StatsEngine.evaluateDrawTiming(concursos, customJackpotM, isVirada)` e painel `#timing-ev-panel` em `#sec-fechamento` com semáforo de 4 níveis (`🔴 AGUARDAR`, `🟡 REGULAR`, `🟢 BOM MOMENTO`, `🚀 MOMENTO DE OURO`), detecção automática de sequência de acumuladas, bônus `Final 0/5 (+22%)`, `Mega da Virada`, cálculo real de Retorno Esperado (`EV%`) com divisão Poisson (Datas `≤31` vs Motor Potenza Anti-Divisão) e simulador rápido de prêmio.
+   - Orçamento do Steiner-Packing SA elevado (`maxSwaps` até 12.000 / `260ms`), aumentando a taxa de pares únicos em `112×6` mantendo `Ov3+ = 0`.
+   - Adicionado peso opcional `StatsEngine.getModernEraBayesWeights(concursos, beta)` (`🧬 Peso Globo Moderno #1115+`) baseado na persistência observada pós-2009 (`p=0,002` em permutação nula), preservando 100% da cobertura `60/60` dezenas.
+2. **Remoção de Sugestões Automáticas (12 Quentes, 15 Balanceadas, Melhor Garantido) e Fechamento Estritamente Manual**:
    - Removidos da UI e do motor os botões/opções de corte automático de subconjunto (`🔥 12 Quentes`, `⚖️ 15 Balanceadas`, `🤖 Melhor Garantido`, auto-preenchimento e opção `fechamento` no seletor por orçamento), evitando concentração artificial em 12–15 dezenas sem vantagem preditiva.
    - `💰 Montar por Orçamento` mantido como fluxo principal em `#sec-fechamento` cobrindo 60/60 dezenas (`⚖️ Misto Inteligente 7+6 dez.`, `🎯 Máx. Frequência Steiner 6 dez.` e `🔥 Equilibrado Steiner 7 dez.`).
    - Fechamento Manual recolhido em `<details id="fech-manual-details">` (opcional para escolha manual no volante); botão `⚡ Gerar Fechamento` permanece desabilitado (`disabled`) via `updateFechamentoGerarState()` até o operador selecionar manualmente ao menos `k + 1` dezenas (`≥7` p/ 6 dez., `≥8` p/ 7 dez., `≥9` p/ 8 dez.).
@@ -208,7 +213,9 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 - `checkFilters(cand: number[], lastDraw?: Object, rules?: Object) -> boolean`: Validação de soma, paridade e quadrantes.
 - `generatePotenzaGames(params: Object) -> Object`: Gerador oficial com Regra Recomendada (cobertura de zeradas, pares inéditos, balanceamento e bloqueio de duplicadas).
 - `generateFechamento(selectedNums: number[], k?: number, garantia?: number, basePrice6?: number) -> Object`: Fechamento matemático manual (matrizes recordes + Multi-Start Greedy) para dezenas escolhidas manualmente.
-- `generateByBudget(orcamentoReais: number, perfil?: string, lastDraw?: Object) -> Object`: Montador por orçamento cobrindo 60/60 dezenas (`misto`, `freq6`, `eq7`).
+- `generateByBudget(orcamentoReais: number, perfil?: string, lastDraw?: Object, options?: Object) -> Object`: Montador por orçamento cobrindo 60/60 dezenas (`misto`, `freq6`, `eq7`) com peso Bayesiano opcional da Era Moderna.
+- `evaluateDrawTiming(concursos: Array, customJackpotM?: number, isViradaOverride?: boolean) -> Object`: Semáforo EV+ de Melhor Momento de Jogar (acumulada, Final 0/5, Mega da Virada, divisão Poisson e ganho Anti-Divisão).
+- `getModernEraBayesWeights(concursos: Array, beta?: number) -> Float64Array`: Pesos Bayesianos suaves da Era Moderna de globo único (`#1115+`).
 - `runBacktesting(apostas: Array, concursos: Array) -> Object`: Backtesting histórico via bitmasks 32-bit com multiplicadores Caixa.
 - `conferirApostas(apostas: Array, dezenasSorteadas: number[]) -> Object`: Apuração de acertos.
 - `getExcelHeatmapColor(value: number, min: number, max: number) -> string`: Gradiente de 3 cores estilo Excel (Verde -> Amarelo -> Vermelho).
@@ -240,4 +247,5 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 - `togglePagamento(partId: number)`: Alterna status PAGO / PENDENTE instantaneamente.
 - `updateFechamentoGerarState()`: Habilita `⚡ Gerar Fechamento` somente quando há `>= k + 1` dezenas selecionadas manualmente.
 - `gerarPorOrcamentoUi()`: Monta carteira 60/60 por orçamento (`misto`, `freq6`, `eq7`).
+- `renderTimingPanel(customJackpotM?: number, isViradaOverride?: boolean)`: Atualiza o semáforo EV+ de Melhor Momento de Jogar.
 - `gerarFechamentoUi()`: Gera fechamento exclusivamente a partir das dezenas selecionadas manualmente pelo usuário.

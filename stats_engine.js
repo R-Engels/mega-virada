@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.36 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.37 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -285,6 +285,7 @@ const StatsEngine = (() => {
     const fixedNums = params.fixed_nums || [];
     const excludeNums = new Set(params.exclude_nums || []);
     const lastDraw = params.last_draw || null;
+    const modernBayesW = params.modern_bayes_weights || null;
     const rules = params.rules || {
       apply_filters: true,
       sum_min: 90,
@@ -355,7 +356,8 @@ const StatsEngine = (() => {
       const weights = poolNums.map((n) => {
         const f = numFreq[n];
         const antiCrowd = n > 31 ? 1.38 : 1.0;
-        return (1.0 / Math.pow(1 + f, 3.5)) * antiCrowd;
+        const bayesTilt = modernBayesW ? (modernBayesW[n] || 1.0) : 1.0;
+        return (1.0 / Math.pow(1 + f, 3.5)) * antiCrowd * bayesTilt;
       });
 
       let bestCandidate = null;
@@ -486,11 +488,14 @@ const StatsEngine = (() => {
 
       const baseTarget = (totalM * kLen) / 60;
       const targetF = new Float64Array(61);
-      for (let n = 1; n <= 60; n++) targetF[n] = baseTarget * (n > 31 ? 1.15 : 0.86);
+      for (let n = 1; n <= 60; n++) {
+        const bTilt = modernBayesW ? (modernBayesW[n] || 1.0) : 1.0;
+        targetF[n] = baseTarget * (n > 31 ? 1.15 : 0.86) * bTilt;
+      }
 
       const tStartSwap = Date.now();
-      const maxBudgetMs = Math.min(180, Math.max(25, generated.length * 2));
-      const maxSwaps = Math.min(6000, generated.length * 75);
+      const maxBudgetMs = Math.min(260, Math.max(40, generated.length * 3));
+      const maxSwaps = Math.min(12000, generated.length * 120);
       let temp = 1.2;
 
       for (let it = 0; it < maxSwaps && (Date.now() - tStartSwap) < maxBudgetMs; it++) {
@@ -1221,9 +1226,136 @@ const StatsEngine = (() => {
     };
   }
 
+  // Pesos Bayesianos suaves da Era Moderna de globo único (#1115+, pós-out/2009)
+  // Preserva 60/60 dezenas (clamped em [0.72, 1.38]), nunca elimina nenhuma dezena
+  function getModernEraBayesWeights(concursos = [], beta = 1.5) {
+    const w = new Float64Array(61).fill(1.0);
+    const mod = (concursos || []).filter((c) => (c.concurso || 0) >= 1115);
+    if (mod.length < 300) return w;
+    const freq = new Int32Array(61);
+    for (let i = 0; i < mod.length; i++) {
+      const dez = mod[i].dezenas || [];
+      for (let j = 0; j < dez.length; j++) {
+        const n = dez[j];
+        if (n >= 1 && n <= 60) freq[n]++;
+      }
+    }
+    const exp = mod.length * 0.1;
+    let sum = 0;
+    for (let n = 1; n <= 60; n++) {
+      const raw = Math.pow((freq[n] + 15) / (exp + 15), beta);
+      w[n] = Math.max(0.72, Math.min(1.38, raw));
+      sum += w[n];
+    }
+    const norm = 60.0 / sum;
+    for (let n = 1; n <= 60; n++) w[n] *= norm;
+    return w;
+  }
+
+  // Semáforo "Melhor Momento de Jogar" (EV+ por Acumulada, Final 0/5, Mega da Virada e Anti-Divisão Poisson)
+  function evaluateDrawTiming(concursos = [], customJackpotM = null, isViradaOverride = null) {
+    const arr = concursos || [];
+    const ult = arr.length ? arr[arr.length - 1] : null;
+    let streak = 0;
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].acumulada) streak++;
+      else break;
+    }
+
+    const proxConcurso = ult ? (ult.concurso || 0) + 1 : 0;
+    const isFinal05 = proxConcurso > 0 && proxConcurso % 5 === 0;
+    const faltaFinal05 = proxConcurso > 0 ? ((5 - (proxConcurso % 5)) % 5) : 0;
+    const baseEst = ult && ult.estimativa > 0 ? ult.estimativa : 3500000;
+    const J = customJackpotM !== null && Number.isFinite(Number(customJackpotM))
+      ? Math.max(1e6, Number(customJackpotM) * 1e6)
+      : baseEst;
+
+    const ultData = ult?.data || '';
+    const autoVirada = J >= 350e6 || (ultData.includes('/12/') && parseInt(ultData.split('/')[0], 10) >= 18);
+    const isVirada = isViradaOverride !== null ? !!isViradaOverride : autoVirada;
+
+    const P_SENA = 1 / 50063860;
+    const TICKET = 6.0;
+    const BASE_Q4Q5_EV = TICKET * 0.4335 * 0.38; // R$ 0,9884 por volante de R$ 6 (Quina + Quadra)
+
+    const calcEV = (crowdFactor) => {
+      const nSold = isVirada ? Math.max(300e6, J * 0.55) : (4.5e6 + 0.18 * J);
+      const lam = nSold * P_SENA * crowdFactor;
+      const splitFactor = lam < 1e-6 ? 1.0 : (1 - Math.exp(-lam)) / lam;
+      const senaEV = P_SENA * J * splitFactor;
+      const q4q5Boost = crowdFactor < 1 ? 1.18 : (crowdFactor > 1 ? 0.78 : 1.0);
+      const totalEV = senaEV + BASE_Q4Q5_EV * q4q5Boost;
+      return {
+        totalEV,
+        roiPct: Math.round((totalEV / TICKET) * 1000) / 10,
+        splitFactor,
+      };
+    };
+
+    const evDatas = calcEV(2.5);
+    const evMedio = calcEV(1.0);
+    const evPotenza = calcEV(0.45);
+    const ganhoVsComum = Math.round((evPotenza.roiPct / 18.2) * 100) / 100;
+    const ganhoAntiDivPct = evDatas.roiPct > 0
+      ? Math.round(((evPotenza.roiPct / evDatas.roiPct) - 1) * 100)
+      : 0;
+
+    let nivel, icone, titulo, recomendacao;
+    if (evPotenza.roiPct >= 65 || isVirada) {
+      nivel = 'ouro';
+      icone = '🚀';
+      titulo = isVirada ? 'MOMENTO DE OURO — MEGA DA VIRADA' : 'MOMENTO DE OURO — ACUMULADA EXTREMA';
+      recomendacao = isVirada
+        ? 'Não acumula! Anti-Divisão (>31) evita dividir com a multidão e multiplica o prêmio líquido em até 3×.'
+        : 'Retorno esperado ~4× acima de concurso comum. Melhor hora para descarregar o caixa acumulado do bolão.';
+    } else if (evPotenza.roiPct >= 45 || J >= 80e6) {
+      nivel = 'bom';
+      icone = '🟢';
+      titulo = 'BOM MOMENTO — ACUMULADA FORTE';
+      recomendacao = 'Retorno esperado ~2,8×–3,3× acima de sorteio comum. Vale entrar com força usando Misto Inteligente ou Steiner 6 dez.';
+    } else if (evPotenza.roiPct >= 30 || (isFinal05 && J >= 25e6)) {
+      nivel = 'regular';
+      icone = '🟡';
+      titulo = isFinal05 ? 'REGULAR (FINAL 0/5 — BÔNUS +22%)' : 'REGULAR — AINDA ACUMULANDO';
+      recomendacao = isFinal05
+        ? 'Concurso de Final 0/5 recebe +22% de reserva da Caixa. Aposta moderada ok, mas acumular para R$ 80M+ paga mais EV.'
+        : 'Se puder esperar, guarde a cota para acumular acima de R$ 80M ou até o próximo Final 0/5.';
+    } else {
+      nivel = 'aguardar';
+      icone = '🔴';
+      titulo = 'AGUARDAR — PRÊMIO BAIXO';
+      recomendacao = 'Concurso comum tem o pior retorno (EV ~20%). Guarde o caixa do bolão e entre forte quando acumular ≥ R$ 80M.';
+    }
+
+    return {
+      ultimo_concurso: ult ? ult.concurso : 0,
+      ultima_data: ultData,
+      prox_concurso: proxConcurso,
+      streak_acumulada: streak,
+      is_final_05: isFinal05,
+      falta_final_05: faltaFinal05,
+      is_virada: isVirada,
+      premio_estimado: J,
+      premio_milhoes: Math.round((J / 1e6) * 10) / 10,
+      ev_datas_pct: evDatas.roiPct,
+      ev_medio_pct: evMedio.roiPct,
+      ev_potenza_pct: evPotenza.roiPct,
+      ganho_vs_comum: ganhoVsComum,
+      ganho_anti_div_pct: ganhoAntiDivPct,
+      nivel,
+      icone,
+      titulo,
+      recomendacao,
+    };
+  }
+
   // Otimizador por Orçamento (R$): monta a melhor carteira matemática cobrindo 60/60 dezenas (Steiner Packing)
-  function generateByBudget(orcamentoReais, perfil = 'misto', lastDraw = null) {
+  function generateByBudget(orcamentoReais, perfil = 'misto', lastDraw = null, options = {}) {
     const budget = Math.max(36, Math.min(20000, Number(orcamentoReais) || 650));
+    const useModernBayes = !!(options && options.useModernBayes);
+    const modernBayesW = useModernBayes && options.concursos
+      ? getModernEraBayesWeights(options.concursos, 1.5)
+      : null;
 
     let jogos = [];
     let descricao = '';
@@ -1232,15 +1364,15 @@ const StatsEngine = (() => {
 
     if (perfil === 'freq6') {
       const qtd6 = Math.floor(budget / 6);
-      jogos = generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, last_draw: lastDraw }).jogos.map((j) => j.dezenas);
+      jogos = generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, last_draw: lastDraw, modern_bayes_weights: modernBayesW }).jogos.map((j) => j.dezenas);
       custoTotal = jogos.length * 6;
       combinacoesEq6 = jogos.length;
       descricao = `Máxima Frequência (Steiner 6 dez.): ${jogos.length} jogos cobrindo 60 dezenas`;
     } else if (perfil === 'eq7') {
       const qtd7 = Math.max(1, Math.floor(budget / 42));
-      const g7 = generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw }).jogos.map((j) => j.dezenas);
+      const g7 = generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw, modern_bayes_weights: modernBayesW }).jogos.map((j) => j.dezenas);
       const rem6 = Math.floor((budget - g7.length * 42) / 6);
-      const g6 = rem6 > 0 ? generatePotenzaGames({ quantidade: rem6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      const g6 = rem6 > 0 ? generatePotenzaGames({ quantidade: rem6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw, modern_bayes_weights: modernBayesW }).jogos.map((j) => j.dezenas) : [];
       jogos = [...g7, ...g6];
       custoTotal = g7.length * 42 + g6.length * 6;
       combinacoesEq6 = g7.length * 7 + g6.length;
@@ -1250,12 +1382,15 @@ const StatsEngine = (() => {
       const qtd7 = Math.floor((budget * 0.6) / 42);
       const rem = budget - qtd7 * 42;
       const qtd6 = Math.floor(rem / 6);
-      const g7 = qtd7 > 0 ? generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
-      const g6 = qtd6 > 0 ? generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw }).jogos.map((j) => j.dezenas) : [];
+      const g7 = qtd7 > 0 ? generatePotenzaGames({ quantidade: qtd7, dezenas_por_jogo: 7, last_draw: lastDraw, modern_bayes_weights: modernBayesW }).jogos.map((j) => j.dezenas) : [];
+      const g6 = qtd6 > 0 ? generatePotenzaGames({ quantidade: qtd6, dezenas_por_jogo: 6, base_existing: g7, last_draw: lastDraw, modern_bayes_weights: modernBayesW }).jogos.map((j) => j.dezenas) : [];
       jogos = [...g7, ...g6];
       custoTotal = g7.length * 42 + g6.length * 6;
       combinacoesEq6 = g7.length * 7 + g6.length;
       descricao = `Misto Inteligente: ${g7.length} jogo(s) de 7 dez. + ${g6.length} jogo(s) de 6 dez.`;
+    }
+    if (useModernBayes && modernBayesW) {
+      descricao += ' · Globo Moderno #1115+';
     }
 
     // Métricas matemáticas exatas do portfólio gerado
@@ -1305,6 +1440,8 @@ const StatsEngine = (() => {
     runBacktesting,
     generateFechamento,
     generateByBudget,
+    evaluateDrawTiming,
+    getModernEraBayesWeights,
   };
 })();
 

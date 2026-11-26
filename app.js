@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.36 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.37 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1304,6 +1304,7 @@ async function atualizarResultadoCaixa() {
       }
 
       $('#sync-banner').textContent = `Concurso Mais Recente: #${concNum} (${data.dataApuracao || ''}) · Dezenas: ${dezenas.join(', ')}`;
+      renderTimingPanel();
       executarConferenciaVisual(dezenas, concNum);
     }
   } catch (err) {
@@ -1326,6 +1327,7 @@ async function loadInitialData() {
       if (state.concursos.length) {
         const u = state.concursos[state.concursos.length - 1];
         $('#sync-banner').textContent = `Concurso Mais Recente: #${u.concurso} (${u.data}) · Dezenas: ${u.dezenas.join(', ')}`;
+        renderTimingPanel();
       }
     }
   } catch (e) {
@@ -1820,12 +1822,79 @@ function renderFechamentoOutput(res) {
   }
 }
 
+function renderTimingPanel(customJackpotM = null, isViradaOverride = null) {
+  const el = $('#timing-ev-panel');
+  if (!el || typeof StatsEngine.evaluateDrawTiming !== 'function') return;
+  const t = StatsEngine.evaluateDrawTiming(state.concursos || [], customJackpotM, isViradaOverride);
+  const isSim = customJackpotM !== null;
+  const tagFinal = t.is_final_05
+    ? `<span class="badge" style="border-color:var(--accent);color:var(--accent)">⭐ Final 0/5 (+22% bônus Caixa)</span>`
+    : (t.falta_final_05 > 0 ? `<span class="badge">Final 0/5 em ${t.falta_final_05} conc.</span>` : '');
+  const tagStreak = t.streak_acumulada > 0
+    ? `<span class="badge">🔥 Acumulada ${t.streak_acumulada}× seguidas</span>`
+    : `<span class="badge">Sem acúmulo anterior</span>`;
+
+  el.className = `timing-ev-box timing-${t.nivel}`;
+  el.innerHTML = `
+    <div class="timing-ev-head">
+      <div>
+        <strong style="font-size:13.5px">${t.icone} ${t.titulo}</strong>
+        <div class="muted" style="font-size:11.5px;margin-top:2px">
+          ${isSim ? 'Simulação manual' : `Próximo Concurso #${t.prox_concurso}`} · Prêmio estimado: <b>R$ ${t.premio_milhoes.toLocaleString('pt-BR')} milhões</b>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
+        ${tagStreak}
+        ${tagFinal}
+      </div>
+    </div>
+    <div class="timing-ev-metrics">
+      <div class="timing-metric">
+        <span>Retorno Potenza (Anti-Div.)</span>
+        <b>${t.ev_potenza_pct.toFixed(1)}%</b>
+      </div>
+      <div class="timing-metric">
+        <span>vs Concurso Comum</span>
+        <b>${t.ganho_vs_comum.toFixed(2)}×</b>
+      </div>
+      <div class="timing-metric">
+        <span>Vantagem Anti-Divisão (&gt;31)</span>
+        <b>+${t.ganho_anti_div_pct}%</b>
+      </div>
+      <div class="timing-metric">
+        <span>Retorno Jogador Datas (≤31)</span>
+        <b>${t.ev_datas_pct.toFixed(1)}%</b>
+      </div>
+    </div>
+    <p class="timing-ev-rec">${t.recomendacao}</p>
+    <div class="timing-sim-row">
+      <span class="muted" style="font-size:11.5px;font-weight:600">Simular outro prêmio:</span>
+      <input type="number" id="timing-sim-val" min="3" max="1500" step="10" value="${t.premio_milhoes}" style="width:92px;padding:4px 7px;font-size:12px" />
+      <span class="muted" style="font-size:11.5px">R$ milhões</span>
+      <label class="check" style="font-size:11.5px"><input type="checkbox" id="timing-sim-virada" ${t.is_virada ? 'checked' : ''} /> Mega da Virada</label>
+      <button type="button" id="btn-timing-sim" class="btn btn-sm btn-ghost">Simular EV</button>
+      ${isSim ? '<button type="button" id="btn-timing-reset" class="btn btn-sm btn-ghost">↺ Concurso Atual</button>' : ''}
+    </div>
+  `;
+
+  $('#btn-timing-sim')?.addEventListener('click', () => {
+    const val = parseFloat($('#timing-sim-val')?.value);
+    const vir = !!$('#timing-sim-virada')?.checked;
+    if (Number.isFinite(val) && val >= 1) renderTimingPanel(val, vir);
+  });
+  $('#btn-timing-reset')?.addEventListener('click', () => renderTimingPanel(null, null));
+}
+
 function gerarPorOrcamentoUi() {
   const budget = parseFloat($('#fech-budget-val')?.value) || 650;
   const perfil = $('#fech-budget-profile')?.value || 'misto';
+  const useModernBayes = !!$('#fech-modern-bayes')?.checked;
   const lastDraw = state.concursos && state.concursos.length ? state.concursos[state.concursos.length - 1] : null;
   try {
-    const res = StatsEngine.generateByBudget(budget, perfil, lastDraw);
+    const res = StatsEngine.generateByBudget(budget, perfil, lastDraw, {
+      concursos: state.concursos || [],
+      useModernBayes,
+    });
     // Compatível com botão Adicionar ao Bolão e Backtesting
     state.fechamentoResult = {
       origem_orcamento: true,

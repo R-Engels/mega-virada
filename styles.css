@@ -1525,6 +1525,55 @@ tr.row-cota-alerta {
   line-height: 22px;
 }
 
+/* Semáforo EV+ Melhor Momento de Jogar (V. 2.37) */
+.timing-ev-box {
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+.timing-ev-box.timing-aguardar { border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.08); }
+.timing-ev-box.timing-regular  { border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.08); }
+.timing-ev-box.timing-bom      { border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.10); }
+.timing-ev-box.timing-ouro     { border-left: 4px solid #38bdf8; background: rgba(56, 189, 248, 0.12); }
+.timing-ev-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.timing-ev-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.timing-metric {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.timing-metric span { font-size: 11px; color: var(--muted); }
+.timing-metric b { font-size: 16px; color: var(--text); }
+.timing-ev-rec { margin: 9px 0 6px; font-size: 12px; color: var(--text); line-height: 1.4; }
+.timing-sim-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-top: 7px;
+  border-top: 1px dashed var(--border);
+}
+[data-theme="light"] .timing-ev-box.timing-aguardar { background: #fef2f2; }
+[data-theme="light"] .timing-ev-box.timing-regular  { background: #fffbeb; }
+[data-theme="light"] .timing-ev-box.timing-bom      { background: #ecfdf5; }
+[data-theme="light"] .timing-ev-box.timing-ouro     { background: #f0f9ff; }
+
 /* Garantia final de ocultação de toda a interface na impressão */
 @media print {
   header.topbar,

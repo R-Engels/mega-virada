@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.36</title>
-  <link rel="stylesheet" href="styles.css?v=2.36" />
+  <title>Mega-Sena Potenza — V. 2.37</title>
+  <link rel="stylesheet" href="styles.css?v=2.37" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
   <header class="topbar no-print">
     <div class="brand">
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.36</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.37</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -212,11 +212,14 @@
       </div>
     </section>
 
-    <!-- 3.5. MONTADOR POR ORÇAMENTO & FECHAMENTO MANUAL -->
+    <!-- 3.5. SEMÁFORO EV+, MONTADOR POR ORÇAMENTO & FECHAMENTO MANUAL -->
     <section id="sec-fechamento" class="card">
       <div class="card-header">
-        <h3>Montar por Orçamento &amp; Fechamento Manual</h3>
+        <h3>Melhor Momento (EV+), Orçamento &amp; Fechamento Manual</h3>
       </div>
+
+      <!-- Semáforo: Melhor Momento de Jogar (Valor Esperado por Acumulada & Anti-Divisão) -->
+      <div id="timing-ev-panel" class="timing-ev-box" style="margin-bottom:12px"></div>
 
       <!-- Otimizador por Orçamento (R$) — Cobertura 60/60 (Steiner Packing) -->
       <div class="fech-controls-bar" style="margin-bottom:10px">
@@ -228,9 +231,12 @@
           <span>Estratégia pelo Orçamento</span>
           <select id="fech-budget-profile">
             <option value="misto">⚖️ Misto Inteligente (7 dez. + 6 dez.) — Recomendado</option>
-            <option value="freq6">🎯 Máx. Frequência (Steiner 6 dez.)</option>
+            <option value="freq6">🎯 Máx. Frequência (Steiner 6 dez. — +58% sorteios premiados)</option>
             <option value="eq7">🔥 Equilibrado (Steiner 7 dez. — 3× Quadra)</option>
           </select>
+        </label>
+        <label class="check" style="font-size:12px;align-self:center" title="Aplica peso Bayesiano suave da Era Moderna de globo único (#1115+, p=0,002), mantendo 60/60 dezenas cobertas">
+          <input type="checkbox" id="fech-modern-bayes" /> 🧬 Tendência Globo Moderno (#1115+)
         </label>
         <div class="fech-quick-btns">
           <button id="btn-fech-budget" class="btn btn-primary" title="Monta automaticamente a carteira matemática cobrindo as 60 dezenas dentro do orçamento informado">💰 Montar por Orçamento</button>
@@ -380,10 +386,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.36 -->
-  <script src="stats_engine.js?v=2.36"></script>
-  <script src="printer_service.js?v=2.36"></script>
-  <script src="firebase_sync.js?v=2.36"></script>
-  <script src="app.js?v=2.36"></script>
+  <!-- Módulos da Aplicação V. 2.37 -->
+  <script src="stats_engine.js?v=2.37"></script>
+  <script src="printer_service.js?v=2.37"></script>
+  <script src="firebase_sync.js?v=2.37"></script>
+  <script src="app.js?v=2.37"></script>
 </body>
 </html>
