@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.43 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -234,6 +234,8 @@ const StatsEngine = (() => {
 
     const minOver31 = rules.min_over_31 !== undefined ? rules.min_over_31 : 1;
     if (over31 < minOver31) return false;
+    const minUnder32 = rules.min_under_32 !== undefined ? rules.min_under_32 : 1;
+    if ((k - over31) < minUnder32) return false;
 
     const maxSameDigit = k === 6
       ? (rules.max_same_digit !== undefined ? rules.max_same_digit : 3)
@@ -324,11 +326,15 @@ const StatsEngine = (() => {
 
     const existingMasks = baseExisting.map((a) => encodeBitmask(a.dezenas || a));
     const numFreq = new Array(61).fill(0);
+    const qFreq = [0, 0, 0, 0, 0];
     const pairFreq = new Map();
 
     baseExisting.forEach((a) => {
       const arr = a.dezenas || a;
-      arr.forEach((n) => numFreq[n]++);
+      arr.forEach((n) => {
+        numFreq[n]++;
+        if (n >= 1 && n <= 60) qFreq[getQuadrant(n)]++;
+      });
       for (let i = 0; i < arr.length; i++) {
         for (let j = i + 1; j < arr.length; j++) {
           const x = Math.min(arr[i], arr[j]);
@@ -351,13 +357,17 @@ const StatsEngine = (() => {
 
     const generated = [];
     let relaxed = false;
+    const idealO31 = dezenasPorJogo * 0.52;
 
     for (let q = 0; q < quantidade; q++) {
+      const minQF = Math.min(qFreq[1], qFreq[2], qFreq[3], qFreq[4]);
       const weights = poolNums.map((n) => {
         const f = numFreq[n];
-        const antiCrowd = n > 31 ? 1.38 : 1.0;
+        const qExcess = qFreq[getQuadrant(n)] - minQF;
+        const qBal = 1.0 / Math.pow(1 + qExcess, 1.35);
+        const antiCrowd = n > 31 ? 1.05 : 1.0;
         const bayesTilt = modernBayesW ? (modernBayesW[n] || 1.0) : 1.0;
-        return (1.0 / Math.pow(1 + f, 3.5)) * antiCrowd * bayesTilt;
+        return (1.0 / Math.pow(1 + f, 3.5)) * qBal * antiCrowd * bayesTilt;
       });
 
       let bestCandidate = null;
@@ -400,12 +410,29 @@ const StatsEngine = (() => {
           }
         }
         const antiCrowd = cand.filter((n) => n > 31).length;
+        // Equilíbrio dos 4 quadrantes no bolão acumulado + ponto ótimo anti-divisão (3-4 altas + 2-3 baixas, sem saturar Q3/Q4)
+        const candQ = [0, 0, 0, 0, 0];
+        let qTouched = 0;
+        for (let i = 0; i < cand.length; i++) {
+          const qn = getQuadrant(cand[i]);
+          if (candQ[qn] === 0) qTouched++;
+          candQ[qn]++;
+        }
+        const nextQ = [0, qFreq[1] + candQ[1], qFreq[2] + candQ[2], qFreq[3] + candQ[3], qFreq[4] + candQ[4]];
+        const qMean = (nextQ[1] + nextQ[2] + nextQ[3] + nextQ[4]) / 4.0;
+        let qVar = 0;
+        for (let qi = 1; qi <= 4; qi++) qVar += Math.pow(nextQ[qi] - qMean, 2);
+        const o31Sweet = Math.max(-4.0, 3.0 - Math.abs(antiCrowd - idealO31) * 2.0);
+        const qSpreadBonus = qTouched >= 3 ? 3.0 : -4.0;
+
         const gain =
           zerosHit * 18.0 +
           cand.reduce((acc, n) => acc + 6.0 / (1 + numFreq[n]), 0) +
           newPairs * 6.0 -
           pairRepeats * 4.0 +
-          antiCrowd * 1.5 -
+          o31Sweet +
+          qSpreadBonus -
+          qVar * 3.5 -
           tripleOverlaps * 60.0 -
           quadOverlaps * 280.0;
 
@@ -430,7 +457,10 @@ const StatsEngine = (() => {
       seenSignatures.add(chosenSig);
       existingMasks.push(bestMasks);
 
-      bestCandidate.forEach((n) => numFreq[n]++);
+      bestCandidate.forEach((n) => {
+        numFreq[n]++;
+        qFreq[getQuadrant(n)]++;
+      });
       for (let i = 0; i < bestCandidate.length; i++) {
         for (let j = i + 1; j < bestCandidate.length; j++) {
           const pairKey = `${bestCandidate[i]}-${bestCandidate[j]}`;
@@ -448,19 +478,25 @@ const StatsEngine = (() => {
       });
     }
 
-    // Pós-otimização Steiner-Packing SA Direcionado a Conflitos (95%–100% pares únicos, Ov3+=0, Anti-Divisão >31)
+    // Pós-otimização Steiner-Packing SA Direcionado a Conflitos (pares únicos, Ov3+=0, equilíbrio Q1..Q4, Anti-Divisão equilibrada)
     if (generated.length >= 2 && fixed.length === 0 && excludeNums.size === 0) {
       const antiDivScore = (arr) => {
         let sc = 0, o31 = 0, l12 = 0, m5 = 0;
+        let qMask = 0;
         const diffs = new Set();
         for (let i = 0; i < arr.length; i++) {
           const n = arr[i];
           if (n > 31) o31++;
           if (n <= 12) l12++;
           if (n % 5 === 0) m5++;
+          qMask |= (1 << getQuadrant(n));
           if (i > 0) diffs.add(n - arr[i - 1]);
         }
-        sc += o31 * 2.2 - Math.max(0, l12 - 1) * 1.5 - Math.max(0, m5 - 1) * 1.0;
+        // Ponto ótimo anti-divisão: 3 a 4 dezenas >31 (sem saturar Q3/Q4 nem cair em datas puras)
+        const targetO31 = arr.length * 0.52;
+        sc += Math.max(-6.0, 4.0 - Math.abs(o31 - targetO31) * 2.2);
+        if (popcount32(qMask) >= 3) sc += 2.0; else sc -= 3.0;
+        sc -= Math.max(0, l12 - 2) * 1.5 + Math.max(0, m5 - 2) * 1.0;
         if (diffs.size <= 2) sc -= 4.0;
         return sc;
       };
@@ -474,12 +510,14 @@ const StatsEngine = (() => {
       const totalM = allGames.length;
       const kLen = dezenasPorJogo;
       const nf = new Uint16Array(61);
+      const qf = new Int32Array(5);
       const pf = new Uint16Array(61 * 61);
       const sigAll = new Set(allGames.map((g) => g.join('-')));
       for (let gi = 0; gi < totalM; gi++) {
         const arr = allGames[gi];
         for (let i = 0; i < arr.length; i++) {
           nf[arr[i]]++;
+          qf[getQuadrant(arr[i])]++;
           for (let j = i + 1; j < arr.length; j++) {
             pf[Math.min(arr[i], arr[j]) * 61 + Math.max(arr[i], arr[j])]++;
           }
@@ -487,10 +525,11 @@ const StatsEngine = (() => {
       }
 
       const baseTarget = (totalM * kLen) / 60;
+      const qTarget = (totalM * kLen) / 4.0;
       const targetF = new Float64Array(61);
       for (let n = 1; n <= 60; n++) {
         const bTilt = modernBayesW ? (modernBayesW[n] || 1.0) : 1.0;
-        targetF[n] = baseTarget * (n > 31 ? 1.15 : 0.86) * bTilt;
+        targetF[n] = baseTarget * (n > 31 ? 1.04 : 0.96) * bTilt;
       }
 
       const tStartSwap = Date.now();
@@ -517,6 +556,7 @@ const StatsEngine = (() => {
         if (worstRep === 0 && Math.random() < 0.5) pos = Math.floor(Math.random() * kLen);
 
         const oldN = gArr[pos];
+        const oldQ = getQuadrant(oldN);
         let bestNewN = -1, bestDE = 1e9, bestNextArr = null, bestNextM = null;
 
         // Avalia 6 candidatos rápidos e escolhe o melhor movimento
@@ -528,6 +568,12 @@ const StatsEngine = (() => {
             (Math.pow(nf[oldN] - 1 - targetF[oldN], 2) - Math.pow(nf[oldN] - targetF[oldN], 2)) +
             (Math.pow(nf[newN] + 1 - targetF[newN], 2) - Math.pow(nf[newN] - targetF[newN], 2));
 
+          const newQ = getQuadrant(newN);
+          const dQVar = oldQ === newQ ? 0 : (
+            (Math.pow(qf[oldQ] - 1 - qTarget, 2) - Math.pow(qf[oldQ] - qTarget, 2)) +
+            (Math.pow(qf[newQ] + 1 - qTarget, 2) - Math.pow(qf[newQ] - qTarget, 2))
+          );
+
           let dDupPairs = 0;
           for (let i = 0; i < kLen; i++) {
             if (i === pos) continue;
@@ -538,7 +584,7 @@ const StatsEngine = (() => {
             if (p2 >= 1) dDupPairs += Math.pow(p2, 2) - Math.pow(p2 - 1, 2);
           }
 
-          const approxDE = dDupPairs * 45.0 + dFreqVar * 5.0;
+          const approxDE = dDupPairs * 45.0 + dFreqVar * 8.0 + dQVar * 6.0;
           if (approxDE >= bestDE && bestNewN !== -1) continue;
 
           const nextArr = gArr.slice();
@@ -561,7 +607,7 @@ const StatsEngine = (() => {
           if (dOv3 > 0 || dOv4 > 0) continue;
 
           const dAnti = antiDivScore(nextArr) - antiDivScore(gArr);
-          const dE = dDupPairs * 45.0 + dFreqVar * 5.0 + dOv3 * 120.0 + dOv4 * 500.0 - dAnti * 1.4;
+          const dE = dDupPairs * 45.0 + dFreqVar * 8.0 + dQVar * 6.0 + dOv3 * 120.0 + dOv4 * 500.0 - dAnti * 1.4;
           if (dE < bestDE) {
             bestDE = dE; bestNewN = newN; bestNextArr = nextArr; bestNextM = nextM;
           }
@@ -572,6 +618,8 @@ const StatsEngine = (() => {
           sigAll.add(bestNextArr.join('-'));
           nf[oldN]--;
           nf[bestNewN]++;
+          qf[oldQ]--;
+          qf[getQuadrant(bestNewN)]++;
           for (let i = 0; i < kLen; i++) {
             if (i === pos) continue;
             const other = gArr[i];

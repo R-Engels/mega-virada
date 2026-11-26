@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.43 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1463,7 +1463,7 @@ async function atualizarResultadoCaixa(opts = {}) {
 async function loadInitialData() {
   // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json?v=2.43');
+    const resp = await fetch('data/concursos.json?v=2.44');
     if (resp.ok) {
       state.concursos = await resp.json();
     }

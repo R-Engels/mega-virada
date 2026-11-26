@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.43 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
  * Serviço de Impressão Óptica dos Volantes Oficiais Caixa (Tradicional vs Mega da Virada)
  * Perfis independentes por tipo de folha + prévia visual + impressão óptica limpa para leitora
  */

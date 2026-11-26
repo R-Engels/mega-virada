@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.43 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.44 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -64,12 +64,17 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AO/            # Backup imutável V. 2.41
 ├── Backup_Versao_AP/            # Backup imutável V. 2.42
 ├── Backup_Versao_AQ/            # Backup imutável V. 2.43
+├── Backup_Versao_AR/            # Backup imutável V. 2.44
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.43)
+## Fluxos de Operação (V. 2.44)
 
-1. **Perfis Separados de Impressão Óptica: Mega-Sena Tradicional (Dia a Dia) vs Mega da Virada**:
+1. **Correção do Viés Excessivo em Q3/Q4 (>31) e Equilíbrio Rigoroso dos 4 Quadrantes**:
+   - Corrigida distorção em `generatePotenzaGames()` onde bônus ilimitado por dezenas `>31` (`1.38×` + `+1.5`/bola + SA `2.2×`) concentrava quase todas as apostas em Q3/Q4 em bolões menores (ex.: 6 jogos gerando `Q1=3, Q2=4, Q3=14, Q4=15` e bilhetes 100% altos).
+   - `checkFilters()` agora exige ao menos 1 dezena `≤31` e ao menos 1 `>31` (bloqueia tanto datas puras quanto jogos 100% altos).
+   - Gerador e Steiner-Packing SA agora equilibram dinamicamente a contagem acumulada dos 4 quadrantes (`qFreq` / `dQVar`) e miram o ponto ótimo anti-divisão (`~52% >31`, ou seja 3–4 altas + 2–3 baixas por bilhete), mantendo `Q1 ≈ Q2 ≈ Q3 ≈ Q4` desde o primeiro jogo, `60/60` dezenas e `Ov3+ = 0`.
+2. **Perfis Separados de Impressão Óptica: Mega-Sena Tradicional (Dia a Dia) vs Mega da Virada**:
    - Adicionado seletor `#print-volante-tipo` em `#sec-impressao` alternando entre dois perfis físicos independentes salvos separadamente no `localStorage`:
      - **🟢 Mega-Sena Tradicional (Dia a Dia)**: padrão `83×185 mm`, `3 jogos/volante`, Teimosinha habilitada.
      - **✨ Mega da Virada (Folha Especial)**: padrão `83×200 mm`, cabeçalho maior (`offset_y = 42mm`), `jogos_por_volante` configurável (`1..3`), Teimosinha automaticamente desativada.

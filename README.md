@@ -1,4 +1,4 @@
-﻿# Mega-Sena Potenza — V. 2.43 (Nuvem 24h Padrão)
+﻿# Mega-Sena Potenza — V. 2.44 (Nuvem 24h Padrão)
 
 Aplicação 100% estática para gestão e conferência de bolões da Mega da Virada, gerador estatístico com regras recomendadas oficiais Caixa, conferência visual integrada e impressão óptica de volantes oficiais (83×185mm).
 
@@ -33,7 +33,7 @@ Ao abrir a aplicação no celular ou computador, ela conecta automaticamente via
 
 ---
 
-## 🎯 Principais Recursos (V. 2.43)
+## 🎯 Principais Recursos (V. 2.44)
 
 1. **Impressão Separada: Mega-Sena Tradicional (Dia a Dia) vs Mega da Virada**:
    - Seletor dedicado de folha na impressão óptica com perfis independentes (`83×185mm` dia a dia vs folha especial da Mega da Virada, sem Teimosinha), jogos por volante configuráveis (`1–3`), calibração isolada e ajuste automático de orientação A4 (`Paisagem`/`Retrato`) sem corte.
