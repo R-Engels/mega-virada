@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.40 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.41 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -1403,9 +1403,6 @@ const StatsEngine = (() => {
       custoTotal = g7.length * 42 + g6.length * 6;
       combinacoesEq6 = g7.length * 7 + g6.length;
       descricao = `Misto Inteligente: ${g7.length} jogo(s) de 7 dez. + ${g6.length} jogo(s) de 6 dez.`;
-    }
-    if (useModernBayes && modernBayesW) {
-      descricao += ' · Globo Moderno #1115+';
     }
 
     // Métricas matemáticas exatas do portfólio gerado

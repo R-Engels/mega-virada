@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.40 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.41 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -61,12 +61,15 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AL/            # Backup imutável V. 2.38
 ├── Backup_Versao_AM/            # Backup imutável V. 2.39
 ├── Backup_Versao_AN/            # Backup imutável V. 2.40
+├── Backup_Versao_AO/            # Backup imutável V. 2.41
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.40)
+## Fluxos de Operação (V. 2.41)
 
-1. **Sincronização Automática Caixa ao Abrir (CORS Corrigido + Preenchimento de Lacunas + Data do Próximo Sorteio)**:
+1. **Tendência Globo Moderno (`#1115+`) Silenciosa por Padrão**:
+   - Removida a caixa de seleção `#fech-modern-bayes` da UI e o sufixo textual `Globo Moderno #1115+` da descrição; o peso Bayesiano suave da Era Moderna permanece aplicado automaticamente em todo o motor mantendo cobertura `60/60`.
+2. **Sincronização Automática Caixa ao Abrir (CORS Corrigido + Preenchimento de Lacunas + Data do Próximo Sorteio)**:
    - Corrigido CORS na consulta online: substituído `api.guidi.dev.br` (sem header `Access-Control-Allow-Origin`) por cadeia com fallback CORS `ACAO: *` (`loteriascaixa-api.herokuapp.com` → `servicebus2.caixa.gov.br` oficial → `api.guidi.dev.br`).
    - `loadInitialData()` agora dispara `atualizarResultadoCaixa({ silent: true })` automaticamente ao abrir a página, baixa todos os concursos intermediários faltantes (`maxLocal + 1 .. ultimo`), persiste extras em `localStorage` (`megasena_concursos_extras`) e atualiza automaticamente o banner e o semáforo `#timing-ev-panel` com a **data exata do próximo sorteio** (`data_proximo`).
    - Base `data/concursos.json` atualizada até `#3090` (`24/11/2026`, próximo `#3091` em `26/11/2026` — R\$ 75M, 6× acumulada).

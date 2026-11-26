@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.40 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.41 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -1414,7 +1414,7 @@ async function atualizarResultadoCaixa(opts = {}) {
 async function loadInitialData() {
   // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json?v=2.40');
+    const resp = await fetch('data/concursos.json?v=2.41');
     if (resp.ok) {
       state.concursos = await resp.json();
     }
@@ -1955,12 +1955,10 @@ function renderTimingPanel() {
 function gerarPorOrcamentoUi() {
   const budget = parseFloat($('#fech-budget-val')?.value) || 650;
   const perfil = $('#fech-budget-profile')?.value || 'misto';
-  const useModernBayes = !!$('#fech-modern-bayes')?.checked;
   const lastDraw = state.concursos && state.concursos.length ? state.concursos[state.concursos.length - 1] : null;
   try {
     const res = StatsEngine.generateByBudget(budget, perfil, lastDraw, {
       concursos: state.concursos || [],
-      useModernBayes,
     });
     // Compatível com botão Adicionar ao Bolão e Backtesting
     state.fechamentoResult = {
