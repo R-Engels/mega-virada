@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.38 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.39 (Nuvem 24h Padrão)
  * Motor Estatístico, Regras Recomendadas, Gerador, Backtesting Histórico e Fechamentos (6/7/8+)
  */
 
@@ -1352,7 +1352,7 @@ const StatsEngine = (() => {
   // Otimizador por Orçamento (R$): monta a melhor carteira matemática cobrindo 60/60 dezenas (Steiner Packing)
   function generateByBudget(orcamentoReais, perfil = 'misto', lastDraw = null, options = {}) {
     const budget = Math.max(36, Math.min(20000, Number(orcamentoReais) || 650));
-    const useModernBayes = !!(options && options.useModernBayes);
+    const useModernBayes = options && options.useModernBayes !== undefined ? !!options.useModernBayes : true;
     const modernBayesW = useModernBayes && options.concursos
       ? getModernEraBayesWeights(options.concursos, 1.5)
       : null;

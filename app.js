@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.38 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.39 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -759,6 +759,7 @@ function sortearUmaAposta() {
   }
 
   const fixed = Array.from(state.bolaoPickerSelected);
+  const modernW = StatsEngine.getModernEraBayesWeights(state.concursos || [], 1.5);
 
   // Se tiver de 1 a 5 dezenas marcadas no cartão: apenas completa no cartão para revisão do usuário
   if (fixed.length > 0 && fixed.length < 6) {
@@ -767,6 +768,7 @@ function sortearUmaAposta() {
       dezenas_por_jogo: 6,
       base_existing: b.apostas || [],
       fixed_nums: fixed,
+      modern_bayes_weights: modernW,
     });
 
     if (!gen || !gen.jogos.length) {
@@ -787,6 +789,7 @@ function sortearUmaAposta() {
     dezenas_por_jogo: 6,
     base_existing: b.apostas || [],
     fixed_nums: [],
+    modern_bayes_weights: modernW,
   });
 
   if (!gen || !gen.jogos.length) {
@@ -848,6 +851,7 @@ function sortearCotaInteira() {
     quantidade: qtd,
     dezenas_por_jogo: 6,
     base_existing: b.apostas || [],
+    modern_bayes_weights: StatsEngine.getModernEraBayesWeights(state.concursos || [], 1.5),
   });
 
   if (!gen || gen.jogos.length < qtd) {

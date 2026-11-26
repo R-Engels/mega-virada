@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.38 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.39 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -59,12 +59,16 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── Backup_Versao_AJ/            # Backup imutável V. 2.36
 ├── Backup_Versao_AK/            # Backup imutável V. 2.37
 ├── Backup_Versao_AL/            # Backup imutável V. 2.38
+├── Backup_Versao_AM/            # Backup imutável V. 2.39
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.38)
+## Fluxos de Operação (V. 2.39)
 
-1. **Semáforo "Melhor Momento de Jogar" Enxuto (Somente Concurso Atual)**:
+1. **Tendência Globo Moderno (`#1115+`) Ativada por Padrão em Todo o Motor**:
+   - Checkbox `#fech-modern-bayes` (`🧬 Tendência Globo Moderno (#1115+)`) marcada por padrão (`checked`) no Montador por Orçamento, e `useModernBayes` padrão `true` em `StatsEngine.generateByBudget()`.
+   - Sorteios automáticos da aba Registrar & Sortear (`sortearUmaAposta()` e `sortearCotaInteira()`) também utilizam `StatsEngine.getModernEraBayesWeights(state.concursos, 1.5)` por padrão, preservando cobertura `60/60`, anti-divisão (`>31`) e `Ov3+ = 0`.
+2. **Semáforo "Melhor Momento de Jogar" Enxuto (Somente Concurso Atual)**:
    - Removidos do painel `#timing-ev-panel` os 4 cartões percentuais de EV (`Retorno Potenza`, `vs Concurso Comum`, `Vantagem Anti-Divisão`, `Retorno Jogador Datas`) e a barra de simulação manual (`Simular outro prêmio` / `Mega da Virada`).
    - Painel mantém apenas o veredito direto do próximo concurso atual (semáforo, prêmio estimado, sequência de acumuladas, contagem para Final 0/5 e recomendação prática).
 2. **Semáforo "Melhor Momento de Jogar" (EV+ Acumuladas), Steiner Packing Aprimorado e Peso Opcional Era Moderna (`#1115+`)**:
