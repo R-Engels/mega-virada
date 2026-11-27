@@ -1,6 +1,6 @@
 ﻿// -*- coding: utf-8 -*-
 /**
- * Mega-Sena Potenza — V. 2.45 (Nuvem 24h Padrão)
+ * Mega-Sena Potenza — V. 2.46 (Nuvem 24h Padrão)
  * Aplicação Principal 100% Client-Side (GitHub Pages + Firebase Realtime)
  */
 
@@ -922,7 +922,7 @@ function updatePrintTypeUi() {
   const prof = PrinterService.getProfile(tipo);
   const layout = PrinterService.getPageLayout(prof);
   const orientLabel = layout.orientation === 'portrait' ? 'Retrato' : 'Paisagem';
-  const jogosVol = prof.jogos_por_volante || 3;
+  const jogosVol = prof.jogos_por_volante || 2;
 
   const pill = $('#print-spec-pill');
   if (pill) {
@@ -996,15 +996,15 @@ function loadCalibrationInputs() {
   const p = PrinterService.getProfile();
   const setVal = (id, v) => { const el = $(id); if (el) el.value = v; };
   setVal('#cal-size', `${p.volante_w_mm}x${p.volante_h_mm}`);
-  setVal('#cal-jogos-volante', p.jogos_por_volante || 3);
+  setVal('#cal-jogos-volante', p.jogos_por_volante || 2);
   setVal('#cal-offset-x', p.offset_x_mm);
   setVal('#cal-offset-y', p.offset_y_mm);
   setVal('#cal-col-step', p.col_step_mm);
   setVal('#cal-row-step', p.row_step_mm);
   setVal('#cal-mark-w', p.mark_w_mm);
   setVal('#cal-mark-h', p.mark_h_mm);
-  setVal('#cal-g2', p.game_offsets?.[1] ?? 48.0);
-  setVal('#cal-g3', p.game_offsets?.[2] ?? 96.0);
+  setVal('#cal-g2', p.game_offsets?.[1] ?? 25.0);
+  setVal('#cal-g3', p.game_offsets?.[2] ?? 50.0);
   setVal('#cal-qty-y', p.qty_offset_y_mm);
   setVal('#cal-qty-x', p.qty_start_x_mm);
   setVal('#cal-qty-step', p.qty_step_x_mm);
@@ -1018,14 +1018,14 @@ function saveCalibrationInputs() {
     const v = parseFloat($(id)?.value);
     return Number.isFinite(v) ? v : fallback;
   };
-  p.jogos_por_volante = Math.min(3, Math.max(1, parseInt($('#cal-jogos-volante')?.value, 10) || 3));
+  p.jogos_por_volante = Math.min(3, Math.max(1, parseInt($('#cal-jogos-volante')?.value, 10) || p.jogos_por_volante || 2));
   p.offset_x_mm = numVal('#cal-offset-x', p.offset_x_mm);
   p.offset_y_mm = numVal('#cal-offset-y', p.offset_y_mm);
   p.col_step_mm = numVal('#cal-col-step', p.col_step_mm);
   p.row_step_mm = numVal('#cal-row-step', p.row_step_mm);
   p.mark_w_mm = numVal('#cal-mark-w', p.mark_w_mm);
   p.mark_h_mm = numVal('#cal-mark-h', p.mark_h_mm);
-  p.game_offsets = [0, numVal('#cal-g2', 48.0), numVal('#cal-g3', 96.0)];
+  p.game_offsets = [0, numVal('#cal-g2', p.game_offsets?.[1] ?? 25.0), numVal('#cal-g3', p.game_offsets?.[2] ?? 50.0)];
   p.qty_offset_y_mm = numVal('#cal-qty-y', p.qty_offset_y_mm);
   p.qty_start_x_mm = numVal('#cal-qty-x', p.qty_start_x_mm);
   p.qty_step_x_mm = numVal('#cal-qty-step', p.qty_step_x_mm);
@@ -1489,7 +1489,7 @@ async function atualizarResultadoCaixa(opts = {}) {
 async function loadInitialData() {
   // 1. Concursos (base compactada + cache local de extras + auto-sync online em segundo plano)
   try {
-    const resp = await fetch('data/concursos.json?v=2.45');
+    const resp = await fetch('data/concursos.json?v=2.46');
     if (resp.ok) {
       state.concursos = await resp.json();
       if (state.concursos.length) {

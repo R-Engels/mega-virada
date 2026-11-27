@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mega-Sena Potenza — V. 2.45</title>
-  <link rel="stylesheet" href="styles.css?v=2.45" />
+  <title>Mega-Sena Potenza — V. 2.46</title>
+  <link rel="stylesheet" href="styles.css?v=2.46" />
   <style id="dynamic-page-style"></style>
 </head>
 <body>
   <header class="topbar no-print">
     <div class="brand">
       <div>
-        <h1>Mega-Sena Potenza <small>V. 2.45</small></h1>
+        <h1>Mega-Sena Potenza <small>V. 2.46</small></h1>
         <p id="sync-banner">Carregando dados da Mega-Sena...</p>
       </div>
     </div>
@@ -315,7 +315,7 @@
     <section id="sec-impressao" class="card">
       <div class="card-header">
         <h3>Impressão dos Volantes (Marcação Óptica A4)</h3>
-        <span id="print-spec-pill" class="print-spec-pill">Escala <b>100%</b> · <b>Paisagem</b> · <b>Sem margens</b> · 83×185mm</span>
+        <span id="print-spec-pill" class="print-spec-pill">Escala <b>100%</b> · <b>Paisagem</b> · <b>Sem margens</b> · 81.5×140mm</span>
       </div>
       <div class="print-config-pane">
         <div class="print-toolbar">
@@ -338,17 +338,17 @@
           <div class="form-grid cal-grid" style="margin-top:10px">
             <label>Tamanho Volante (mm)<input type="text" id="cal-size" /></label>
             <label>Jogos por Volante (1–3)<input type="number" min="1" max="3" step="1" id="cal-jogos-volante" /></label>
-            <label>Offset X (mm)<input type="number" step="0.5" id="cal-offset-x" /></label>
-            <label>Offset Y Jogo 1 (mm)<input type="number" step="0.5" id="cal-offset-y" /></label>
-            <label>Passo Coluna (mm)<input type="number" step="0.05" id="cal-col-step" /></label>
-            <label>Passo Linha (mm)<input type="number" step="0.1" id="cal-row-step" /></label>
+            <label>Offset X (mm)<input type="number" step="0.1" id="cal-offset-x" /></label>
+            <label>Offset Y Jogo 1 (mm)<input type="number" step="0.1" id="cal-offset-y" /></label>
+            <label>Passo Coluna (mm)<input type="number" step="0.01" id="cal-col-step" /></label>
+            <label>Passo Linha (mm)<input type="number" step="0.02" id="cal-row-step" /></label>
             <label>Largura Marca (mm)<input type="number" step="0.1" id="cal-mark-w" /></label>
             <label>Altura Marca (mm)<input type="number" step="0.1" id="cal-mark-h" /></label>
-            <label>Distância Jogo 2 (mm)<input type="number" step="0.5" id="cal-g2" /></label>
-            <label>Distância Jogo 3 (mm)<input type="number" step="0.5" id="cal-g3" /></label>
-            <label>Y Qtd Dezenas (mm)<input type="number" step="0.5" id="cal-qty-y" /></label>
-            <label>X Inicial Qtd 6 (mm)<input type="number" step="0.5" id="cal-qty-x" /></label>
-            <label>Passo X Qtd (mm)<input type="number" step="0.1" id="cal-qty-step" /></label>
+            <label>Distância Jogo 2 (mm)<input type="number" step="0.1" id="cal-g2" /></label>
+            <label>Distância Jogo 3 (mm)<input type="number" step="0.1" id="cal-g3" /></label>
+            <label>Y Qtd Dezenas (mm)<input type="number" step="0.1" id="cal-qty-y" /></label>
+            <label>X Inicial Qtd 6 (mm)<input type="number" step="0.1" id="cal-qty-x" /></label>
+            <label>Passo X Qtd (mm)<input type="number" step="0.01" id="cal-qty-step" /></label>
           </div>
           <div class="inline-form" style="margin-top:10px">
             <button id="btn-save-profile" class="btn btn-sm btn-primary">Salvar Calibração</button>
@@ -388,10 +388,10 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Módulos da Aplicação V. 2.45 -->
-  <script src="stats_engine.js?v=2.45"></script>
-  <script src="printer_service.js?v=2.45"></script>
-  <script src="firebase_sync.js?v=2.45"></script>
-  <script src="app.js?v=2.45"></script>
+  <!-- Módulos da Aplicação V. 2.46 -->
+  <script src="stats_engine.js?v=2.46"></script>
+  <script src="printer_service.js?v=2.46"></script>
+  <script src="firebase_sync.js?v=2.46"></script>
+  <script src="app.js?v=2.46"></script>
 </body>
 </html>

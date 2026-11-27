@@ -1,4 +1,4 @@
-﻿﻿<!-- Versão: V. 2.45 (Nuvem 24h Padrão) | Atualizado em: 2026-11-26 -->
+﻿﻿<!-- Versão: V. 2.46 (Nuvem 24h Padrão) | Atualizado em: 2026-11-27 -->
 # CODE_MAP — Sistema Mega-Sena & Bolão Potenza
 
 ## Arquitetura Serverless (GitHub Pages + Google Firebase)
@@ -22,12 +22,18 @@ Aplicação 100% executável no navegador (client-side), sem dependência de ser
 ├── README.md                    # Documentação do repositório e link GitHub Pages
 ├── iniciar_sistema.bat          # Inicializador local para navegador Windows
 ├── Backup_Versao_A/             # Backup imutável V. 2.45 (Versão Oficial Base — reinício do histórico de backups)
+├── Backup_Versao_B/             # Backup imutável V. 2.46 (Calibração física real volante Tradicional 81,5×140mm)
 └── sistema/                     # Versão legada com backend Python / SQLite
 ```
 
-## Fluxos de Operação (V. 2.45)
+## Fluxos de Operação (V. 2.46)
 
-1. **Auditoria Exaustiva ML + Backtests Multi-Horizonte (`t-1..t-100`, `EWMA`, `Era Moderna #1115+`), Steiner 2-Opt, Novo Recorde `12_6_5` e Correção de 10 Bugs Reais**:
+1. **Calibração Óptica Física Real — Volante Mega-Sena Tradicional (`81,5 × 140 mm`, 2 jogos/folha)**:
+   - Calibrado diretamente sobre o volante físico oficial Caixa com régua: folha `81,5 × 140 mm`, `2 jogos/volante`, grade `18,5 × 61,5 mm` (`offset_x=11,8 mm`, `offset_y=22,1 mm`, `col_step=6,37 mm`, `row_step=3,28 mm`, `mark=4,2×1,8 mm`, distância entre jogos `25,0 mm`).
+   - Barra única inferior **"Assinale quantos números (6..15)"** (`y=73,4 mm`, alinhada às 10 colunas `01..10`) e barra única **"Teimosinha (2/4/8)"** (`y=93,1 mm`), substituindo a marcação repetida por jogo que causaria rejeição na leitora óptica.
+   - **Separação automática por quantidade de dezenas no volante (`buildSlipsPayload`)**: jogos de 7 dezenas e jogos de 6 dezenas nunca compartilham o mesmo volante físico quando `qty_unico=true`, garantindo compatibilidade 100% com a leitora Caixa em carteiras mistas.
+   - Prévia visual atualizada para refletir fielmente as barras ópticas laterais, os 2 quadros de 60 dezenas, barra única `Qtd 6..15` e `Teimosinha`, mantendo a impressão física 100% limpa. Chave de perfil versionada (`megasena_print_profile_v2_*`) para aplicar automaticamente a nova calibração sem resíduo de cache antigo.
+2. **Auditoria Exaustiva ML + Backtests Multi-Horizonte (`t-1..t-100`, `EWMA`, `Era Moderna #1115+`), Steiner 2-Opt, Novo Recorde `12_6_5` e Correção de 10 Bugs Reais**:
    - **Empirical Bayes James-Stein Calibrado (`getModernEraBayesWeights`)**: substituído o peso sub-regularizado (`M=15, beta=1.5, [0.72..1.38]`, que violava o Princípio da Casa dos Pombos em `112×6` levando bolas a `14×` e piorando `WinDraws` vs uniforme) pelo blend validado **60% Era Moderna (`#1115+`) + 40% EWMA Limpo (`#1115+`, `HL=650`)** com encolhimento Dirichlet ótimo `M=800`, `beta=1.0`, clamp `[0.82, 1.22]`: supera o oráculo uniforme em Proper Out-of-Sample Log-Likelihood (`dLL > 0`), validado em permutação nula (`p = 0,0033`, 0/300 loterias justas) e preserva o empacotamento Steiner sem distorção. Janelas curtas (`t-1`, `t-10`, `t-30`, `t-100`, MLP, GBDT, LogReg) rejeitadas por overfitting em validação cega.
    - **Steiner Packing Aprimorado (`generatePotenzaGames`)**: construção sequencial guiada por pares inéditos (`Pair-Guided`), guarda absoluta `60/60` (`nf[oldN] <= 1`), reparo explícito Fase 0 `Ov3+ = 0` (zerando triplas até em 333 jogos / R\$ 2.000), busca exata 60-candidatos (`Exact-60 1-Swap`), **Cross-Game 2-Opt Direcionado** invariante em frequência e quadrantes, e cálculo exato de `totalBalls` em carteiras mistas `7+6`.
    - **Novo Recorde de Fechamento (`12_6_5`: 39 → 38 jogos, `100% m=6`, `100% m=5`, `84,44% m=4`)** + permutação isomórfica `mapWithOptimalPermutation()` também no fallback `v=17..20`.
